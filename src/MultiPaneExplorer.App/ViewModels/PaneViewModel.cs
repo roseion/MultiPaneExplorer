@@ -39,6 +39,17 @@ public partial class PaneViewModel : ObservableObject
     [ObservableProperty]
     private bool _showTree = true;
 
+    /// <summary>是否显示隐藏文件（全局设置，由主窗口同步到所有窗格）。</summary>
+    [ObservableProperty]
+    private bool _showHiddenFiles;
+
+    /// <summary>当前排序列：Name / Modified / Type / Size。</summary>
+    [ObservableProperty]
+    private string _sortColumn = "Name";
+
+    [ObservableProperty]
+    private bool _sortDescending;
+
     /// <summary>文件树根节点（驱动器）。</summary>
     public ObservableCollection<FsTreeNode> TreeRoots { get; } = new();
 
@@ -123,6 +134,21 @@ public partial class PaneViewModel : ObservableObject
             if (root.TryReveal(CurrentPath))
                 return;
         }
+    }
+
+    partial void OnShowHiddenFilesChanged(bool value) => LoadEntries();
+
+    /// <summary>点击列头排序：同列再次点击反向，换列则默认升序。</summary>
+    public void SetSort(string column)
+    {
+        if (string.Equals(SortColumn, column, StringComparison.Ordinal))
+            SortDescending = !SortDescending;
+        else
+        {
+            SortColumn = column;
+            SortDescending = false;
+        }
+        LoadEntries();
     }
 
     private void LoadTreeRoots()
@@ -369,21 +395,23 @@ public partial class PaneViewModel : ObservableObject
             else
             {
                 var directory = new DirectoryInfo(path);
-                var items = directory.EnumerateFileSystemInfos()
-                    .OrderBy(e => (e.Attributes & FileAttributes.Directory) != 0 ? 0 : 1)
-                    .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
-                foreach (var item in items)
-                {
-                    var isDirectory = (item.Attributes & FileAttributes.Directory) != 0;
-                    Entries.Add(new FsEntry
+                var entries = directory.EnumerateFileSystemInfos()
+                    .Where(item => ShowHiddenFiles || (item.Attributes & FileAttributes.Hidden) == 0)
+                    .Select(item =>
                     {
-                        Name = item.Name,
-                        FullPath = item.FullName,
-                        IsDirectory = isDirectory,
-                        SizeBytes = isDirectory ? null : ((FileInfo)item).Length,
-                        ModifiedTime = item.LastWriteTime,
+                        var isDirectory = (item.Attributes & FileAttributes.Directory) != 0;
+                        return new FsEntry
+                        {
+                            Name = item.Name,
+                            FullPath = item.FullName,
+                            IsDirectory = isDirectory,
+                            SizeBytes = isDirectory ? null : ((FileInfo)item).Length,
+                            ModifiedTime = item.LastWriteTime,
+                        };
                     });
-                }
+
+                foreach (var entry in OrderEntries(entries))
+                    Entries.Add(entry);
             }
 
             StatusText = $"{Entries.Count} 个项目";
@@ -392,5 +420,22 @@ public partial class PaneViewModel : ObservableObject
         {
             StatusText = $"无法读取目录：{ex.Message}";
         }
+    }
+
+    /// <summary>排序规则：文件夹恒在文件之前，其余按当前列与方向排列。</summary>
+    private IOrderedEnumerable<FsEntry> OrderEntries(IEnumerable<FsEntry> entries)
+    {
+        var directoriesFirst = entries.OrderByDescending(entry => entry.IsDirectory);
+        return (SortColumn, SortDescending) switch
+        {
+            ("Modified", false) => directoriesFirst.ThenBy(entry => entry.ModifiedTime),
+            ("Modified", true) => directoriesFirst.ThenByDescending(entry => entry.ModifiedTime),
+            ("Type", false) => directoriesFirst.ThenBy(entry => entry.Type, StringComparer.CurrentCultureIgnoreCase),
+            ("Type", true) => directoriesFirst.ThenByDescending(entry => entry.Type, StringComparer.CurrentCultureIgnoreCase),
+            ("Size", false) => directoriesFirst.ThenBy(entry => entry.SizeBytes ?? -1),
+            ("Size", true) => directoriesFirst.ThenByDescending(entry => entry.SizeBytes ?? -1),
+            (_, false) => directoriesFirst.ThenBy(entry => entry.Name, StringComparer.CurrentCultureIgnoreCase),
+            (_, true) => directoriesFirst.ThenByDescending(entry => entry.Name, StringComparer.CurrentCultureIgnoreCase),
+        };
     }
 }

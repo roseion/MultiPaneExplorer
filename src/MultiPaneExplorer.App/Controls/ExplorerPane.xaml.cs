@@ -22,6 +22,14 @@ public partial class ExplorerPane : UserControl
     private Point _dragStartPosition;
     private bool _dragArmed;
 
+    private static readonly Dictionary<string, string> SortHeaderTitles = new()
+    {
+        ["Name"] = "名称",
+        ["Modified"] = "修改时间",
+        ["Type"] = "类型",
+        ["Size"] = "大小",
+    };
+
     public ExplorerPane()
     {
         InitializeComponent();
@@ -34,6 +42,7 @@ public partial class ExplorerPane : UserControl
             _initialized = true;
             Vm.CurrentPathChanged += OnCurrentPathChanged;
             Vm.Initialize(InitialPath);
+            UpdateSortHeaders();
             if (FocusOnLoad)
                 EntryList.Focus();
         };
@@ -101,6 +110,41 @@ public partial class ExplorerPane : UserControl
 
     private void Item_DoubleClick(object sender, MouseButtonEventArgs e) =>
         Vm.OpenEntryCommand.Execute((sender as ListViewItem)?.Content);
+
+    private void ColumnHeader_Click(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not GridViewColumnHeader { Column: not null } header)
+            return;
+
+        var tag = header.Column == NameColumn ? "Name"
+            : header.Column == ModifiedColumn ? "Modified"
+            : header.Column == TypeColumn ? "Type"
+            : header.Column == SizeColumn ? "Size"
+            : null;
+
+        if (tag is null)
+            return;
+
+        Vm.SetSort(tag);
+        UpdateSortHeaders();
+    }
+
+    /// <summary>按当前排序列与方向刷新列头箭头（▲/▼）。</summary>
+    public void UpdateSortHeaders()
+    {
+        SetHeader(NameColumn, "Name");
+        SetHeader(ModifiedColumn, "Modified");
+        SetHeader(TypeColumn, "Type");
+        SetHeader(SizeColumn, "Size");
+
+        void SetHeader(GridViewColumn column, string tag)
+        {
+            var title = SortHeaderTitles[tag];
+            if (string.Equals(Vm.SortColumn, tag, StringComparison.Ordinal))
+                title += Vm.SortDescending ? " ▼" : " ▲";
+            column.Header = title;
+        }
+    }
 
     private void EntryList_KeyDown(object sender, KeyEventArgs e)
     {

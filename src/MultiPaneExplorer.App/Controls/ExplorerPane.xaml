@@ -67,7 +67,8 @@
                       DragOver="EntryList_DragOver"
                       Drop="EntryList_Drop"
                       PreviewMouseLeftButtonDown="EntryList_PreviewMouseLeftButtonDown"
-                      PreviewMouseMove="EntryList_PreviewMouseMove">
+                      PreviewMouseMove="EntryList_PreviewMouseMove"
+                      GridViewColumnHeader.Click="ColumnHeader_Click">
                 <ListView.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="复制"
@@ -99,11 +100,11 @@
                     </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="名称" Width="280" DisplayMemberBinding="{Binding Name}"/>
-                        <GridViewColumn Header="修改时间" Width="140" DisplayMemberBinding="{Binding Modified}"/>
-                        <GridViewColumn Header="类型" Width="90" DisplayMemberBinding="{Binding Type}"/>
-                        <GridViewColumn Header="大小" Width="90" DisplayMemberBinding="{Binding Size}"/>
+                    <GridView x:Name="EntryView">
+                        <GridViewColumn x:Name="NameColumn" Header="名称" Width="280" DisplayMemberBinding="{Binding Name}"/>
+                        <GridViewColumn x:Name="ModifiedColumn" Header="修改时间" Width="140" DisplayMemberBinding="{Binding Modified}"/>
+                        <GridViewColumn x:Name="TypeColumn" Header="类型" Width="90" DisplayMemberBinding="{Binding Type}"/>
+                        <GridViewColumn x:Name="SizeColumn" Header="大小" Width="90" DisplayMemberBinding="{Binding Size}"/>
                     </GridView>
                 </ListView.View>
             </ListView>
