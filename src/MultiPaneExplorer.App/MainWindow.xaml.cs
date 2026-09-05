@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shell;
 using FileOps.Core;
 using MultiPaneExplorer.App.Controls;
 using MultiPaneExplorer.App.ViewModels;
@@ -31,6 +32,9 @@ public partial class MainWindow : Window
     private int _visiblePaneCount = 2;
     private ExplorerPane? _lastFocusedPane;
     private double _uiScale = 1.0;
+
+    /// <summary>合并标题栏的基准高度（XAML 中 CaptionBar 的 Height，未缩放值）。</summary>
+    private const double CaptionBarBaseHeight = 36;
 
     public MainWindow()
     {
@@ -287,7 +291,34 @@ public partial class MainWindow : Window
         ApplyZoom();
     }
 
-    private void ApplyZoom() => RootPanel.LayoutTransform = new ScaleTransform(_uiScale, _uiScale);
+    private void ApplyZoom()
+    {
+        RootPanel.LayoutTransform = new ScaleTransform(_uiScale, _uiScale);
+        // 缩放会改变工具栏的视觉高度，标题栏拖拽命中区必须同步，否则错位后下半截变成拖拽区
+        var chrome = WindowChrome.GetWindowChrome(this);
+        if (chrome is not null)
+            chrome.CaptionHeight = CaptionBarBaseHeight * _uiScale;
+    }
+
+    // ---- 合并标题栏：自绘窗口按钮、最大化越界补边、最大化/还原图标切换 ----
+
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void MaximizeButton_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Window_StateChanged(object? sender, EventArgs e)
+    {
+        // 无边框窗口最大化时会向四周越出一个边框宽度，补边距防止内容被裁/盖住任务栏
+        var chrome = WindowChrome.GetWindowChrome(this);
+        var overhang = chrome?.ResizeBorderThickness ?? new Thickness(6);
+        RootPanel.Margin = WindowState == WindowState.Maximized ? overhang : default(Thickness);
+
+        MaximizeButton.Content = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
+        MaximizeButton.ToolTip = WindowState == WindowState.Maximized ? "向下还原" : "最大化";
+    }
 
     // ---- 撤销/重做：执行后刷新全部可见窗格，状态显示在最近聚焦的窗格 ----
 
