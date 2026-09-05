@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FileOps.Core/FileOps.Core.csproj" />
+    <Project Path="src/MultiPaneExplorer.App/MultiPaneExplorer.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FileOps.Core.Tests/FileOps.Core.Tests.csproj" />
+  </Folder>
+</Solution>
