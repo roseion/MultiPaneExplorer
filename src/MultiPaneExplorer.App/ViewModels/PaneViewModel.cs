@@ -13,13 +13,15 @@ namespace MultiPaneExplorer.App.ViewModels;
 public partial class PaneViewModel : ObservableObject
 {
     private readonly IFileOperationService _fileOps;
+    private readonly IShortcutService _shortcuts;
     private readonly Stack<string?> _back = new();
     private readonly Stack<string?> _forward = new();
     private bool _initialized;
 
-    public PaneViewModel(IFileOperationService? fileOps = null)
+    public PaneViewModel(IFileOperationService? fileOps = null, IShortcutService? shortcuts = null)
     {
         _fileOps = fileOps ?? new FileOperationService();
+        _shortcuts = shortcuts ?? new WshShortcutService();
     }
 
     /// <summary>当前目录；null 表示"此电脑"（驱动器列表）。</summary>
@@ -218,6 +220,15 @@ public partial class PaneViewModel : ObservableObject
         if (entry.IsDirectory)
         {
             NavigateTo(entry.FullPath);
+            return;
+        }
+
+        // 指向文件夹的快捷方式：在软件内打开目标目录，而不是调用系统资源管理器
+        if (string.Equals(Path.GetExtension(entry.FullPath), ".lnk", StringComparison.OrdinalIgnoreCase)
+            && _shortcuts.ResolveTarget(entry.FullPath) is { } target
+            && Directory.Exists(target))
+        {
+            NavigateTo(target);
             return;
         }
 
