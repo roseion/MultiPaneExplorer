@@ -22,7 +22,7 @@ public partial class MainWindow : Window
         FourColumns,
     }
 
-    private static readonly SolidColorBrush SplitterBrush = new(Color.FromRgb(0xDD, 0xDD, 0xDD));
+    private static readonly SolidColorBrush SplitterBrush = new(Color.FromRgb(0xE5, 0xE5, 0xE5));
 
     private readonly List<ExplorerPane> _panes = [];
     private PaneLayout _layout = PaneLayout.Two;

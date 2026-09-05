@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MultiPaneExplorer.App.Controls"
         Title="多栏资源管理器" Width="1440" Height="820"
+        Background="{StaticResource W11.WindowBackground}"
         WindowStartupLocation="CenterScreen"
         PreviewKeyDown="Window_PreviewKeyDown">
     <DockPanel>

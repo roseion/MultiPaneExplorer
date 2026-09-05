@@ -9,8 +9,8 @@
         </DataTemplate>
     </UserControl.Resources>
     <DockPanel>
-        <Border DockPanel.Dock="Top" Background="#F3F3F3" Padding="4"
-                BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Background="{StaticResource W11.WindowBackground}" Padding="4"
+                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal">
                 <ToggleButton IsChecked="{Binding ShowTree, Mode=TwoWay}" ToolTip="显示/隐藏文件树"
                               Width="30" Height="24" Margin="0,0,4,0"
@@ -42,8 +42,8 @@
             </StackPanel>
         </Border>
 
-        <Border DockPanel.Dock="Top" Background="#EAEAEA" Padding="2"
-                BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Background="Transparent" Padding="2"
+                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="0,0,0,1">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Width="22" Height="20" Content="＋"
                         ToolTip="新建标签页 (Ctrl+T)"
@@ -54,9 +54,10 @@
             </DockPanel>
         </Border>
 
-        <Border DockPanel.Dock="Bottom" Background="#F3F3F3" Padding="6,2"
-                BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
-            <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis"/>
+        <Border DockPanel.Dock="Bottom" Background="{StaticResource W11.WindowBackground}" Padding="6,2"
+                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="0,1,0,0">
+            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource W11.TextSecondary}"
+                       TextTrimming="CharacterEllipsis"/>
         </Border>
 
         <Grid>
@@ -152,6 +153,28 @@
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                            CornerRadius="4" SnapsToDevicePixels="True">
+                                        <GridViewRowPresenter Content="{TemplateBinding Content}"
+                                                              Columns="{TemplateBinding GridView.ColumnCollection}"
+                                                              Margin="{TemplateBinding Padding}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                         <EventSetter Event="MouseDoubleClick" Handler="Item_DoubleClick"/>
                     </Style>
                 </ListView.ItemContainerStyle>

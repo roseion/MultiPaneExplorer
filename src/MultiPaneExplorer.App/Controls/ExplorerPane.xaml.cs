@@ -27,9 +27,9 @@ public partial class ExplorerPane : UserControl
     private readonly List<PaneViewModel> _tabs = [];
     private int _activeTabIndex;
 
-    private static readonly Brush DropHintBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD7));
+    private static readonly Brush DropHintBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x67, 0xC0));
     private static readonly Brush ActiveTabBrush = Brushes.White;
-    private static readonly Brush TabBorderBrush = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC));
+    private static readonly Brush TabBorderBrush = new SolidColorBrush(Color.FromRgb(0xE1, 0xE1, 0xE1));
 
     private static readonly Dictionary<string, string> SortHeaderTitles = new()
     {
