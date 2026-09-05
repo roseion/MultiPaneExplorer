@@ -60,14 +60,17 @@
                 BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal">
                 <ToggleButton IsChecked="{Binding ShowTree, Mode=TwoWay}" ToolTip="显示/隐藏文件树"
-                              Width="30" Height="24" Margin="0,0,4,0"
+                              Width="30" Height="24" Margin="0,0,4,0" Padding="0" FontSize="14"
                               FontFamily="Segoe MDL2 Assets" Content="&#xE700;"/>
                 <Button Command="{Binding BackCommand}" ToolTip="后退" Width="30" Height="24"
-                        Margin="4,0,4,0" FontFamily="Segoe MDL2 Assets" Content="&#xE72B;"/>
+                        Margin="4,0,4,0" Padding="0" FontSize="14"
+                        FontFamily="Segoe MDL2 Assets" Content="&#xE72B;"/>
                 <Button Command="{Binding ForwardCommand}" ToolTip="前进" Width="30" Height="24"
-                        Margin="0,0,4,0" FontFamily="Segoe MDL2 Assets" Content="&#xE72A;"/>
+                        Margin="0,0,4,0" Padding="0" FontSize="14"
+                        FontFamily="Segoe MDL2 Assets" Content="&#xE72A;"/>
                 <Button Command="{Binding UpCommand}" ToolTip="向上" Width="30" Height="24"
-                        Margin="0,0,4,0" FontFamily="Segoe MDL2 Assets" Content="&#xE74A;"/>
+                        Margin="0,0,4,0" Padding="0" FontSize="14"
+                        FontFamily="Segoe MDL2 Assets" Content="&#xE74A;"/>
                 <Grid Width="280" VerticalAlignment="Center" MinHeight="24">
                     <Border x:Name="CrumbBar" Background="Transparent" CornerRadius="4" Padding="4,0"
                             BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
@@ -88,11 +91,14 @@
                              LostKeyboardFocus="AddressBox_LostKeyboardFocus"/>
                 </Grid>
                 <Button Command="{Binding RefreshCommand}" ToolTip="刷新 (F5)" Width="30" Height="24"
-                        Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE72C;"/>
+                        Margin="4,0,0,0" Padding="0" FontSize="14"
+                        FontFamily="Segoe MDL2 Assets" Content="&#xE72C;"/>
                 <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="30" Height="24"
-                        Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE8F4;"/>
+                        Margin="4,0,0,0" Padding="0" FontSize="14"
+                        FontFamily="Segoe MDL2 Assets" Content="&#xE8F4;"/>
                 <Button Command="{Binding OpenRecycleBinCommand}" ToolTip="打开回收站" Width="30" Height="24"
-                        Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE74D;"/>
+                        Margin="4,0,0,0" Padding="0" FontSize="14"
+                        FontFamily="Segoe MDL2 Assets" Content="&#xE74D;"/>
                 <ComboBox x:Name="ViewModeBox" Width="76" Height="24" Margin="8,0,0,0"
                           SelectedValue="{Binding ViewMode}" SelectedValuePath="Tag"
                           ToolTip="视图模式">
