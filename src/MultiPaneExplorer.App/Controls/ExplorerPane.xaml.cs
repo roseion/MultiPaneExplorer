@@ -58,8 +58,8 @@ public partial class ExplorerPane : UserControl
         };
     }
 
-    /// <summary>当前激活标签页的视图模型（导航栏/列表/文件树都作用于它）。</summary>
-    public PaneViewModel Vm { get; }
+    /// <summary>当前激活标签页的视图模型（导航栏/列表/文件树都作用于它），随标签切换更新。</summary>
+    public PaneViewModel Vm { get; private set; }
 
     /// <summary>窗格首次加载时定位到的目录；为空或不存在时停留在"此电脑"。</summary>
     public string? InitialPath
@@ -112,6 +112,7 @@ public partial class ExplorerPane : UserControl
         if (index < 0 || index >= _tabs.Count)
             return;
         _activeTabIndex = index;
+        Vm = _tabs[index];
         DataContext = Vm;
         UpdateSortHeaders();
         _revealing = true;
