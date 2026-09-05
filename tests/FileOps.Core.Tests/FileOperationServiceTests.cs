@@ -141,4 +141,144 @@ public sealed class FileOperationServiceTests : IDisposable
         Assert.Equal("原文", File.ReadAllText(source));
         Assert.Equal("原文", File.ReadAllText(Path.Combine(_root, "inplace", "a - 副本.txt")));
     }
+
+    [Fact]
+    public async Task DeleteFile_ToRecycleBin_RemovesFromDirectory()
+    {
+        var file = WriteFile(Path.Combine("todelete", "a.txt"));
+
+        var result = await _service.DeleteToRecycleBinAsync([file]);
+
+        Assert.False(result.HasErrors);
+        Assert.Equal(1, result.DeletedCount);
+        Assert.False(File.Exists(file));
+    }
+
+    [Fact]
+    public async Task DeleteDirectory_ToRecycleBin_RemovesFromDirectory()
+    {
+        var dir = MakeDirectory(Path.Combine("todelete", "folder"));
+        WriteFile(Path.Combine("todelete", "folder", "f.txt"));
+
+        var result = await _service.DeleteToRecycleBinAsync([dir]);
+
+        Assert.False(result.HasErrors);
+        Assert.Equal(1, result.DeletedCount);
+        Assert.False(Directory.Exists(dir));
+    }
+
+    [Fact]
+    public async Task Delete_MissingSource_RecordsErrorButDeletesRest()
+    {
+        var file = WriteFile(Path.Combine("todelete", "a.txt"));
+        var missing = Path.Combine(_root, "todelete", "ghost.txt");
+
+        var result = await _service.DeleteToRecycleBinAsync([missing, file]);
+
+        Assert.True(result.HasErrors);
+        Assert.Equal(1, result.DeletedCount);
+        Assert.Single(result.Errors);
+        Assert.Contains("ghost.txt", result.Errors[0]);
+        Assert.False(File.Exists(file));
+    }
+
+    [Fact]
+    public async Task Rename_ChangesName()
+    {
+        var file = WriteFile(Path.Combine("ren", "a.txt"), "内容");
+
+        var newPath = await _service.RenameAsync(file, "b.txt");
+
+        Assert.Equal(Path.Combine(_root, "ren", "b.txt"), newPath);
+        Assert.False(File.Exists(file));
+        Assert.Equal("内容", File.ReadAllText(newPath));
+    }
+
+    [Fact]
+    public async Task Rename_Directory_ChangesName()
+    {
+        var dir = MakeDirectory(Path.Combine("ren", "old"));
+
+        var newPath = await _service.RenameAsync(dir, "new");
+
+        Assert.Equal(Path.Combine(_root, "ren", "new"), newPath);
+        Assert.True(Directory.Exists(newPath));
+    }
+
+    [Fact]
+    public async Task Rename_ToExistingName_Throws()
+    {
+        var file = WriteFile(Path.Combine("ren", "a.txt"));
+        WriteFile(Path.Combine("ren", "b.txt"));
+
+        await Assert.ThrowsAsync<IOException>(() => _service.RenameAsync(file, "b.txt"));
+    }
+
+    [Fact]
+    public async Task Rename_WithInvalidCharacters_Throws()
+    {
+        var file = WriteFile(Path.Combine("ren", "a.txt"));
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _service.RenameAsync(file, "a<b>.txt"));
+    }
+
+    [Fact]
+    public async Task Rename_WithEmptyName_Throws()
+    {
+        var file = WriteFile(Path.Combine("ren", "a.txt"));
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _service.RenameAsync(file, "  "));
+    }
+
+    [Fact]
+    public async Task Rename_SamePath_ReturnsUnchanged()
+    {
+        var file = WriteFile(Path.Combine("ren", "a.txt"));
+
+        var result = await _service.RenameAsync(file, "a.txt");
+
+        Assert.Equal(file, result);
+        Assert.True(File.Exists(file));
+    }
+
+    [Fact]
+    public async Task CreateDirectory_DefaultName_UsesNewFolder()
+    {
+        var parent = MakeDirectory("mkdir");
+
+        var created = await _service.CreateDirectoryAsync(parent);
+
+        Assert.Equal(Path.Combine(parent, "新建文件夹"), created);
+        Assert.True(Directory.Exists(created));
+    }
+
+    [Fact]
+    public async Task CreateDirectory_WhenNameConflicts_AutoIncrements()
+    {
+        var parent = MakeDirectory("mkdir");
+        Directory.CreateDirectory(Path.Combine(parent, "新建文件夹"));
+
+        var second = await _service.CreateDirectoryAsync(parent);
+        var third = await _service.CreateDirectoryAsync(parent);
+
+        Assert.Equal(Path.Combine(parent, "新建文件夹 (2)"), second);
+        Assert.Equal(Path.Combine(parent, "新建文件夹 (3)"), third);
+    }
+
+    [Fact]
+    public async Task CreateDirectory_WithCustomName_UsesIt()
+    {
+        var parent = MakeDirectory("mkdir");
+
+        var created = await _service.CreateDirectoryAsync(parent, "图片备份");
+
+        Assert.Equal(Path.Combine(parent, "图片备份"), created);
+    }
+
+    [Fact]
+    public async Task CreateDirectory_MissingParent_Throws()
+    {
+        await Assert.ThrowsAsync<DirectoryNotFoundException>(
+            () => _service.CreateDirectoryAsync(Path.Combine(_root, "no-such-dir")));
+    }
 }

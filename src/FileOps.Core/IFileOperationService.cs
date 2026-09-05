@@ -12,4 +12,23 @@ public interface IFileOperationService
         IEnumerable<string> sourcePaths,
         string targetDirectory,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 把若干路径删除到系统回收站。单个失败不影响其余条目。
+    /// </summary>
+    Task<DeleteResult> DeleteToRecycleBinAsync(
+        IEnumerable<string> paths,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 重命名文件或目录（保持在原目录内）。
+    /// 名称非法或目标已存在时抛出异常；路径与新名称相同（仅大小写差异视为未变）时原样返回。
+    /// </summary>
+    Task<string> RenameAsync(string path, string newName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 在 parentDirectory 下新建文件夹；name 为空时使用"新建文件夹"，重名时自动追加序号。
+    /// 返回新目录的完整路径。
+    /// </summary>
+    Task<string> CreateDirectoryAsync(string parentDirectory, string? name = null, CancellationToken cancellationToken = default);
 }
