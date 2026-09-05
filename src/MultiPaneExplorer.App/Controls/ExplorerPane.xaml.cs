@@ -257,9 +257,108 @@ public partial class ExplorerPane : UserControl
     {
         if (e.Key is not Key.Enter)
             return;
+        AddressSuggestPopup.IsOpen = false;
         Vm.NavigateToAddress(Vm.PathText);
         EntryList.Focus();
         e.Handled = true;
+    }
+
+    // ---- 地址栏补全：输入时在当前目录条目中匹配，Popup 下拉选择 ----
+
+    private void AddressBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!AddressBox.IsKeyboardFocusWithin || Vm.CurrentPath is null)
+        {
+            AddressSuggestPopup.IsOpen = false;
+            return;
+        }
+
+        var input = AddressBox.Text.Trim();
+        if (input.Length == 0)
+        {
+            AddressSuggestPopup.IsOpen = false;
+            return;
+        }
+
+        SuggestList.ItemsSource = Vm.Entries
+            .Where(entry => entry.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
+            .Where(entry => !string.Equals(entry.Name, input, StringComparison.OrdinalIgnoreCase))
+            .Take(8)
+            .ToList();
+
+        AddressSuggestPopup.IsOpen = SuggestList.Items.Count > 0;
+    }
+
+    private void AddressBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!AddressSuggestPopup.IsOpen)
+            return;
+
+        switch (e.Key)
+        {
+            case Key.Down:
+                SuggestList.Focus();
+                SuggestList.SelectedIndex = 0;
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                AddressSuggestPopup.IsOpen = false;
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void SuggestList_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Enter:
+                ActivateSuggestion();
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                AddressSuggestPopup.IsOpen = false;
+                AddressBox.Focus();
+                AddressBox.CaretIndex = AddressBox.Text.Length;
+                e.Handled = true;
+                break;
+            case Key.Up when SuggestList.SelectedIndex == 0:
+                AddressBox.Focus();
+                AddressBox.CaretIndex = AddressBox.Text.Length;
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void SuggestList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // 单击即完成补全（与资源管理器地址栏下拉一致）
+        if (e.OriginalSource is DependencyObject source &&
+            ItemsControl.ContainerFromElement(SuggestList, source) is ListBoxItem item)
+        {
+            SuggestList.SelectedItem = item.DataContext;
+            ActivateSuggestion();
+            e.Handled = true;
+        }
+    }
+
+    private void SuggestList_MouseDoubleClick(object sender, MouseButtonEventArgs e) => ActivateSuggestion();
+
+    private void ActivateSuggestion()
+    {
+        if (SuggestList.SelectedItem is not FsEntry entry)
+            return;
+        AddressSuggestPopup.IsOpen = false;
+        if (entry.IsDirectory)
+        {
+            Vm.NavigateTo(entry.FullPath);
+        }
+        else
+        {
+            AddressBox.Text = entry.FullPath;
+            AddressBox.CaretIndex = AddressBox.Text.Length;
+            AddressBox.Focus();
+        }
     }
 
     private void FilterBox_KeyDown(object sender, KeyEventArgs e)

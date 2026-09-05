@@ -22,9 +22,11 @@
                 <Button Command="{Binding UpCommand}" ToolTip="向上" Width="30" Height="24"
                         Margin="0,0,4,0" FontFamily="Segoe MDL2 Assets" Content="&#xE74A;"/>
                 <TextBox x:Name="AddressBox" Width="280" VerticalContentAlignment="Center"
-                         ToolTip="输入路径后按回车跳转"
+                         ToolTip="输入路径后按回车跳转；输入时下拉补全"
                          Text="{Binding PathText, UpdateSourceTrigger=PropertyChanged}"
-                         KeyDown="AddressBox_KeyDown"/>
+                         KeyDown="AddressBox_KeyDown"
+                         TextChanged="AddressBox_TextChanged"
+                         PreviewKeyDown="AddressBox_PreviewKeyDown"/>
                 <Button Command="{Binding RefreshCommand}" ToolTip="刷新 (F5)" Width="30" Height="24"
                         Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE72C;"/>
                 <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="30" Height="24"
@@ -62,6 +64,22 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
+
+            <Popup x:Name="AddressSuggestPopup"
+                   PlacementTarget="{Binding ElementName=AddressBox}"
+                   Placement="Bottom"
+                   StaysOpen="False"
+                   AllowsTransparency="True"
+                   PopupAnimation="Fade">
+                <Border Background="White" BorderBrush="#999999" BorderThickness="1"
+                        MinWidth="280" MaxHeight="220" SnapsToDevicePixels="True">
+                    <ListBox x:Name="SuggestList" BorderThickness="0"
+                             DisplayMemberPath="Name"
+                             PreviewKeyDown="SuggestList_PreviewKeyDown"
+                             PreviewMouseLeftButtonDown="SuggestList_PreviewMouseLeftButtonDown"
+                             MouseDoubleClick="SuggestList_MouseDoubleClick"/>
+                </Border>
+            </Popup>
 
             <TreeView x:Name="DirTree" Grid.Column="0" Width="200" Margin="0,0,4,0"
                       ItemsSource="{Binding TreeRoots}"
