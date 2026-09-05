@@ -3,8 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using FileOps.Core;
 using MultiPaneExplorer.App.Controls;
-using MultiPaneExplorer.App.Services;
 
 namespace MultiPaneExplorer.App;
 
@@ -284,6 +284,8 @@ public partial class MainWindow : Window
 
         menu.PlacementTarget = FavoritesButton;
         menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        menu.IsOpen = true;
+        // 在 Click 处理器里同步打开会被随后的鼠标事件立即关闭，异步打开规避此问题
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+            new Action(() => menu.IsOpen = true));
     }
 }

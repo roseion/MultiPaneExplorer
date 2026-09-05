@@ -188,15 +188,15 @@ public partial class ExplorerPane : UserControl
     }
 
     /// <summary>捕获当前窗格状态（用于会话保存）。</summary>
-    public Services.PaneState CaptureState() => new()
+    public FileOps.Core.PaneState CaptureState() => new()
     {
         ShowTree = Vm.ShowTree,
         ActiveTabIndex = _activeTabIndex,
-        Tabs = _tabs.Select(tab => new Services.PaneTabState { Path = tab.CurrentPath }).ToList(),
+        Tabs = _tabs.Select(tab => new FileOps.Core.PaneTabState { Path = tab.CurrentPath }).ToList(),
     };
 
     /// <summary>按会话状态恢复标签页（布局与全局设置由主窗口负责）。</summary>
-    public void RestoreState(Services.PaneState state)
+    public void RestoreState(FileOps.Core.PaneState state)
     {
         foreach (var tab in _tabs)
             tab.Shutdown();
