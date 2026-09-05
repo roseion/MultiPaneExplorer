@@ -21,6 +21,9 @@ public static class FileIconCache
     private static readonly ShellIconService Icons = new();
     private static readonly ConcurrentDictionary<string, ImageSource?> Cache = new();
     private static readonly ConcurrentDictionary<string, ImageSource?> LargeCache = new();
+    private static readonly ConcurrentDictionary<string, ImageSource?> TreeIconCache = new();
+
+    private const string RecycleBinParsingName = @"::{645FF040-5081-101B-9F08-00AA002F954E}";
 
     public static ImageSource? Get(FsEntry entry)
     {
@@ -41,6 +44,51 @@ public static class FileIconCache
 
     private static string NormalizeKey(string extension) =>
         string.IsNullOrEmpty(extension) ? NoExtensionKey : extension.ToLowerInvariant();
+
+    /// <summary>文件树节点图标：盘符用真实盘符图标，回收站用 Shell 回收站图标，目录用文件夹图标，按路径缓存。</summary>
+    public static ImageSource? GetTreeIcon(string fullPath, bool isRecycleBin) =>
+        TreeIconCache.GetOrAdd(isRecycleBin ? "<bin>" : fullPath, _ => LoadTreeIcon(fullPath, isRecycleBin));
+
+    private static ImageSource? LoadTreeIcon(string fullPath, bool isRecycleBin)
+    {
+        if (isRecycleBin)
+            return FromHandle(Icons.GetPathSmallIcon(RecycleBinParsingName)) ?? Load(true, DirectoryKey, small: true);
+
+        // 盘符根目录（"C:"/"C:\"）：按真实路径取盘符图标
+        var root = Path.GetPathRoot(fullPath);
+        if (root is not null &&
+            string.Equals(root.TrimEnd(Path.DirectorySeparatorChar),
+                          fullPath.TrimEnd(Path.DirectorySeparatorChar),
+                          StringComparison.OrdinalIgnoreCase))
+        {
+            var fromDrive = FromHandle(Icons.GetPathSmallIcon(root));
+            if (fromDrive is not null)
+                return fromDrive;
+        }
+
+        return Load(true, DirectoryKey, small: true);
+    }
+
+    private static ImageSource? FromHandle(IntPtr hIcon)
+    {
+        if (hIcon == IntPtr.Zero)
+            return null;
+        try
+        {
+            var source = Imaging.CreateBitmapSourceFromHIcon(
+                hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            source.Freeze();
+            return source;
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            _ = DestroyIcon(hIcon);
+        }
+    }
 
     private static ImageSource? Load(bool isDirectory, string cacheKey, bool small)
     {

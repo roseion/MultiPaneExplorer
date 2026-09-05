@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MultiPaneExplorer.App.Models;
@@ -20,6 +21,9 @@ public partial class FsTreeNode : ObservableObject
     public ObservableCollection<FsTreeNode> Children { get; } = new();
     public bool IsDummy { get; }
     public bool ChildrenLoaded { get; private set; }
+
+    /// <summary>节点图标（盘符/回收站/目录，按路径缓存，冻结可跨线程）。</summary>
+    public ImageSource? Icon => FileIconCache.GetTreeIcon(FullPath, FullPath == SpecialLocations.RecycleBin);
 
     private FsTreeNode(string fullPath, string name, bool isDummy)
     {

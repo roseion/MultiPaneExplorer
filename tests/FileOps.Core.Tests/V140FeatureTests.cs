@@ -39,6 +39,16 @@ public sealed class V140FeatureTests : IDisposable
         RunSta(() => _ = DestroyIcon(hIcon));
     }
 
+    /// <summary>按真实路径取图标（文件树盘符节点用）：C:\ 应返回盘符图标句柄。</summary>
+    [Fact]
+    public void GetPathSmallIcon_ForDriveRoot_ReturnsIconHandle()
+    {
+        var hIcon = RunSta(() => _iconService.GetPathSmallIcon("C:\\"));
+
+        Assert.NotEqual(IntPtr.Zero, hIcon);
+        RunSta(() => _ = DestroyIcon(hIcon));
+    }
+
     // ---- DropEffect 编解码 ----
 
     [Fact]

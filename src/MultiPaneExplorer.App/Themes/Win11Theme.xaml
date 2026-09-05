@@ -302,10 +302,10 @@
         </Setter>
     </Style>
 
-    <!-- ============ ScrollBar（W11 细圆角滚动条，无箭头） ============ -->
+    <!-- ============ ScrollBar（W11 细圆角滚动条，无箭头，6px） ============ -->
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Width" Value="8"/>
+        <Setter Property="Width" Value="6"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -315,7 +315,7 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="#8A8A8A" CornerRadius="4" Margin="1"/>
+                                            <Border Background="#A6A6A6" CornerRadius="3" Margin="1"/>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -328,7 +328,7 @@
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Horizontal">
                 <Setter Property="Width" Value="Auto"/>
-                <Setter Property="Height" Value="8"/>
+                <Setter Property="Height" Value="6"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ScrollBar">
@@ -338,7 +338,7 @@
                                         <Thumb>
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border Background="#8A8A8A" CornerRadius="4" Margin="1"/>
+                                                    <Border Background="#A6A6A6" CornerRadius="3" Margin="1"/>
                                                 </ControlTemplate>
                                             </Thumb.Template>
                                         </Thumb>
