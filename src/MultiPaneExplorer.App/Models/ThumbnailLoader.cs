@@ -43,10 +43,24 @@ public static class ThumbnailLoader
             if (entry.LargeIcon is not null)
                 return;
 
-            var source = entry.IsDirectory || !ImageExtensions.Contains(Path.GetExtension(entry.Name))
-                ? FileIconCache.GetLarge(entry)
-                : Cache.GetOrAdd(CacheKey(entry), _ => DecodeThumbnail(entry) ?? FileIconCache.GetLarge(entry)!);
+            ImageSource? source;
+            if (entry.IsDirectory || !ImageExtensions.Contains(Path.GetExtension(entry.Name)))
+            {
+                source = FileIconCache.GetLarge(entry);
+            }
+            else
+            {
+                var key = CacheKey(entry);
+                // 缓存值不允许 null：未命中时现算，算不出不缓存（下次导航可重试）
+                if (!Cache.TryGetValue(key, out source))
+                {
+                    source = DecodeThumbnail(entry) ?? FileIconCache.GetLarge(entry);
+                    if (source is not null)
+                        Cache[key] = source;
+                }
+            }
 
+            Interlocked.Increment(ref _loadedCount);
             // PropertyChange 从线程池线程发出，WPF 绑定引擎自动封送回 UI 线程
             entry.LargeIcon = source;
         }
@@ -59,6 +73,11 @@ public static class ThumbnailLoader
             Gate.Release();
         }
     }
+
+    private static int _loadedCount;
+
+    /// <summary>本次进程累计加载成功的大图标/缩略图数量（诊断用）。</summary>
+    public static int LoadedCount => _loadedCount;
 
     private static string CacheKey(FsEntry entry)
     {

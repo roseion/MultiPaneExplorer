@@ -39,7 +39,14 @@ public static class FileIconCache
         var key = entry.IsDirectory
             ? DirectoryKey
             : NormalizeKey(Path.GetExtension(entry.Name));
-        return LargeCache.GetOrAdd(key, _ => Load(entry.IsDirectory, key, small: false));
+        // 不能用 GetOrAdd 存加载结果：Load 失败返回 null 时 ConcurrentDictionary 会抛异常
+        if (!LargeCache.TryGetValue(key, out var source))
+        {
+            source = Load(entry.IsDirectory, key, small: false);
+            if (source is not null)
+                LargeCache[key] = source;
+        }
+        return source;
     }
 
     private static string NormalizeKey(string extension) =>
