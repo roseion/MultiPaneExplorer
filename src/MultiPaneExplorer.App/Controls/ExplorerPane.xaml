@@ -181,6 +181,8 @@
                       Drop="EntryList_Drop"
                       PreviewMouseLeftButtonDown="EntryList_PreviewMouseLeftButtonDown"
                       PreviewMouseMove="EntryList_PreviewMouseMove"
+                      MouseLeftButtonUp="EntryList_MouseLeftButtonUp"
+                      LostMouseCapture="EntryList_LostMouseCapture"
                       GridViewColumnHeader.Click="ColumnHeader_Click">
                 <ListView.Style>
                     <Style TargetType="ListView">
@@ -189,11 +191,14 @@
                                 <Setter Property="View" Value="{x:Null}"/>
                                 <Setter Property="ItemTemplate" Value="{StaticResource LargeIconTemplate}"/>
                                 <Setter Property="ItemsPanel" Value="{StaticResource LargeIconsPanel}"/>
+                                <!-- 禁横向滚动条：让 WrapPanel 按可视宽度换行，否则内容宽无限增长永远不换行 -->
+                                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding ViewMode}" Value="List">
                                 <Setter Property="View" Value="{x:Null}"/>
                                 <Setter Property="ItemTemplate" Value="{StaticResource ListTemplate}"/>
                                 <Setter Property="ItemsPanel" Value="{StaticResource ListPanel}"/>
+                                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>

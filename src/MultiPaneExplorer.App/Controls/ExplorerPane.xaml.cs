@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using MultiPaneExplorer.App.Models;
@@ -26,6 +27,11 @@ public partial class ExplorerPane : UserControl
     private Point _dragStartPosition;
     private bool _dragArmed;
     private DragDropEffects _pendingDropEffect;
+    private Point? _rubberBandStart;
+    private bool _rubberBandActive;
+    private bool _rubberBandCtrl;
+    private HashSet<FsEntry> _rubberBandBase = [];
+    private RubberBandAdorner? _rubberAdorner;
     private readonly List<PaneViewModel> _tabs = [];
     private int _activeTabIndex;
 
@@ -805,13 +811,112 @@ public partial class ExplorerPane : UserControl
     private void EntryList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _dragStartPosition = e.GetPosition(EntryList);
+
+        // 空白处按下：启动橡皮筋框选并接管本次按下（阻止默认的"点击空白清除选中"）
+        if (ItemsControl.ContainerFromElement(EntryList, e.OriginalSource as DependencyObject) is null)
+        {
+            _rubberBandStart = _dragStartPosition;
+            _rubberBandActive = false;
+            _rubberBandCtrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+            _rubberBandBase = [.. EntryList.SelectedItems.Cast<FsEntry>()];
+            EntryList.CaptureMouse();
+            e.Handled = true;
+            return;
+        }
+
         // 一律先武装；真正能否拖拽到 MouseMove 时判定——那时 WPF 已完成本次按下的选中更新，
         // 按住 Ctrl/Shift 直接开拖（此前无选中）也能正常触发
         _dragArmed = true;
     }
 
+    // ---- 橡皮筋框选：空白处拖动选择条目（资源管理器行为），Ctrl=反转、Shift/默认=并入 ----
+
+    private void UpdateRubberBand(Point start, Point position)
+    {
+        if (!_rubberBandActive)
+        {
+            if (Math.Abs(position.X - start.X) < SystemParameters.MinimumHorizontalDragDistance
+                && Math.Abs(position.Y - start.Y) < SystemParameters.MinimumVerticalDragDistance)
+            {
+                return;
+            }
+            _rubberBandActive = true;
+            _rubberAdorner = new RubberBandAdorner(EntryList);
+            AdornerLayer.GetAdornerLayer(EntryList)?.Add(_rubberAdorner);
+        }
+
+        var rect = new Rect(start, position);
+        _rubberAdorner?.Update(rect);
+        ApplyRubberSelection(rect);
+    }
+
+    private void ApplyRubberSelection(Rect rect)
+    {
+        // 只命中已实例化的容器（大图标视图全部实例化；列表视图虚拟化时仅可见项可选）
+        var inRect = new HashSet<FsEntry>();
+        foreach (var item in Vm.Entries)
+        {
+            if (EntryList.ItemContainerGenerator.ContainerFromItem(item) is not ListViewItem container)
+                continue;
+            var bounds = container.TransformToAncestor(EntryList).TransformBounds(
+                new Rect(new Point(), container.RenderSize));
+            if (bounds.IntersectsWith(rect))
+                inRect.Add(item);
+        }
+
+        // 批量更新期间挂起 SelectionChanged，结束后手动同步一次
+        EntryList.SelectionChanged -= EntryList_SelectionChanged;
+        try
+        {
+            EntryList.SelectedItems.Clear();
+            foreach (var item in Vm.Entries)
+            {
+                var selected = _rubberBandCtrl
+                    ? inRect.Contains(item) != _rubberBandBase.Contains(item)
+                    : _rubberBandBase.Contains(item) || inRect.Contains(item);
+                if (selected)
+                    EntryList.SelectedItems.Add(item);
+            }
+        }
+        finally
+        {
+            EntryList.SelectionChanged += EntryList_SelectionChanged;
+        }
+        Vm.SetSelection(EntryList.SelectedItems.Cast<FsEntry>().ToList());
+    }
+
+    private void EntryList_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndRubberBand();
+
+    private void EntryList_LostMouseCapture(object sender, MouseEventArgs e) => EndRubberBand();
+
+    private void EndRubberBand()
+    {
+        if (_rubberBandStart is null)
+            return;
+        var wasActive = _rubberBandActive;
+        _rubberBandStart = null;
+        _rubberBandActive = false;
+
+        if (_rubberAdorner is not null)
+        {
+            AdornerLayer.GetAdornerLayer(EntryList)?.Remove(_rubberAdorner);
+            _rubberAdorner = null;
+        }
+        if (EntryList.IsMouseCaptured)
+            EntryList.ReleaseMouseCapture();
+
+        if (!wasActive)
+            EntryList.SelectedItems.Clear(); // 原地单击空白 = 取消选中（与资源管理器一致）
+    }
+
     private void EntryList_PreviewMouseMove(object sender, MouseEventArgs e)
     {
+        if (_rubberBandStart is { } rubberStart)
+        {
+            UpdateRubberBand(rubberStart, e.GetPosition(EntryList));
+            return;
+        }
+
         if (Vm.RenamingEntry is not null)
         {
             _dragArmed = false; // 内联重命名中禁止拖拽，避免编辑框被拖走
