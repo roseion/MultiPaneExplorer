@@ -402,10 +402,10 @@ public partial class PaneViewModel : ObservableObject
             owner,
             $"确定清空回收站吗？共 {Entries.Count} 个项目。\n此操作不可撤销。",
             "清空回收站",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning,
-            MessageBoxResult.No);
-        if (confirm != MessageBoxResult.Yes)
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning,
+            System.Windows.MessageBoxResult.No);
+        if (confirm != System.Windows.MessageBoxResult.Yes)
             return;
 
         StatusText = "正在清空回收站…";

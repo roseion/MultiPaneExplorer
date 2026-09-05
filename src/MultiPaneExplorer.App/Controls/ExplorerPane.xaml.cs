@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using MultiPaneExplorer.App.Models;
@@ -478,12 +479,14 @@ public partial class ExplorerPane : UserControl
                 item.DataContext is not string fullPath)
                 return;
             toggle.IsChecked = false;
-            crumbDropdownPopup!.IsOpen = false;
+            if (crumbDropdownPopup is not null)
+                crumbDropdownPopup.IsOpen = false;
             Vm.NavigateTo(fullPath);
             e.Handled = true;
         };
 
-        crumbDropdownPopup?.IsOpen = false;
+        if (crumbDropdownPopup is not null)
+            crumbDropdownPopup.IsOpen = false;
         var popup = new System.Windows.Controls.Primitives.Popup
         {
             PlacementTarget = toggle,
