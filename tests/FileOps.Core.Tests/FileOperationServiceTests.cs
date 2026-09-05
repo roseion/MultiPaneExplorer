@@ -281,4 +281,124 @@ public sealed class FileOperationServiceTests : IDisposable
         await Assert.ThrowsAsync<DirectoryNotFoundException>(
             () => _service.CreateDirectoryAsync(Path.Combine(_root, "no-such-dir")));
     }
+
+    [Fact]
+    public async Task CopyFile_WithReplaceHandler_OverwritesExisting()
+    {
+        var target = Target();
+        File.WriteAllText(Path.Combine(target, "a.txt"), "旧内容");
+        var source = WriteFile(Path.Combine("src", "a.txt"), "新内容");
+
+        var result = await _service.CopyIntoAsync([source], target,
+            new CopyOptions { OnConflict = _ => ConflictDecision.Replace });
+
+        Assert.False(result.HasErrors);
+        Assert.Equal(1, result.CopiedCount);
+        Assert.Equal("新内容", File.ReadAllText(Path.Combine(target, "a.txt")));
+    }
+
+    [Fact]
+    public async Task CopyFile_WithSkipHandler_KeepsTargetAndCountsSkipped()
+    {
+        var target = Target();
+        File.WriteAllText(Path.Combine(target, "a.txt"), "旧内容");
+        var source = WriteFile(Path.Combine("src", "a.txt"), "新内容");
+
+        var result = await _service.CopyIntoAsync([source], target,
+            new CopyOptions { OnConflict = _ => ConflictDecision.Skip });
+
+        Assert.Equal(0, result.CopiedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal("旧内容", File.ReadAllText(Path.Combine(target, "a.txt")));
+        Assert.False(File.Exists(Path.Combine(target, "a - 副本.txt")));
+    }
+
+    [Fact]
+    public async Task Copy_WithKeepBothHandler_RenamesLikeDefault()
+    {
+        var target = Target();
+        File.WriteAllText(Path.Combine(target, "a.txt"), "旧内容");
+        var source = WriteFile(Path.Combine("src", "a.txt"), "新内容");
+
+        var result = await _service.CopyIntoAsync([source], target,
+            new CopyOptions { OnConflict = _ => ConflictDecision.KeepBoth });
+
+        Assert.Equal(1, result.CopiedCount);
+        Assert.Equal("旧内容", File.ReadAllText(Path.Combine(target, "a.txt")));
+        Assert.Equal("新内容", File.ReadAllText(Path.Combine(target, "a - 副本.txt")));
+    }
+
+    [Fact]
+    public async Task CopyDirectory_WithReplaceHandler_MergesIntoExisting()
+    {
+        var target = Target();
+        Directory.CreateDirectory(Path.Combine(target, "folder"));
+        File.WriteAllText(Path.Combine(target, "folder", "inner.txt"), "旧内容");
+        var source = MakeDirectory(Path.Combine("src", "folder"));
+        WriteFile(Path.Combine("src", "folder", "inner.txt"), "新内容");
+        WriteFile(Path.Combine("src", "folder", "extra.txt"), "新增");
+
+        var result = await _service.CopyIntoAsync([source], target,
+            new CopyOptions { OnConflict = _ => ConflictDecision.Replace });
+
+        Assert.False(result.HasErrors);
+        Assert.Equal("新内容", File.ReadAllText(Path.Combine(target, "folder", "inner.txt")));
+        Assert.Equal("新增", File.ReadAllText(Path.Combine(target, "folder", "extra.txt")));
+        Assert.False(Directory.Exists(Path.Combine(target, "folder - 副本")));
+    }
+
+    [Fact]
+    public async Task Copy_ConflictHandler_ReceivesConflictDetails()
+    {
+        var target = Target();
+        File.WriteAllText(Path.Combine(target, "a.txt"), "12345");
+        var source = WriteFile(Path.Combine("src", "a.txt"), "abc");
+
+        ConflictContext? received = null;
+        await _service.CopyIntoAsync([source], target,
+            new CopyOptions { OnConflict = context => { received = context; return ConflictDecision.Replace; } });
+
+        Assert.NotNull(received);
+        Assert.Equal(source, received!.Item.SourcePath);
+        Assert.Equal(Path.Combine(target, "a.txt"), received.Item.TargetPath);
+        Assert.Equal(3, received.Item.SourceBytes);
+        Assert.Equal(5, received.Item.ExistingBytes);
+        Assert.Equal(1, received.Index);
+    }
+
+    [Fact]
+    public async Task Copy_ReportsProgressAndReachesTotal()
+    {
+        var target = Target();
+        var first = WriteFile(Path.Combine("src", "1.bin"), new string('a', 300 * 1024));
+        var second = WriteFile(Path.Combine("src", "2.bin"), new string('b', 200 * 1024));
+        var reports = new List<CopyProgress>();
+        var progress = new CollectingProgress(reports);
+
+        await _service.CopyIntoAsync([first, second], target, new CopyOptions { Progress = progress });
+
+        var total = 500 * 1024L;
+        Assert.NotEmpty(reports);
+        Assert.All(reports, r => Assert.Equal(total, r.TotalBytes));
+        Assert.Equal(total, reports[^1].DoneBytes);
+        Assert.True(File.Exists(Path.Combine(target, "1.bin")));
+        Assert.True(File.Exists(Path.Combine(target, "2.bin")));
+    }
+
+    [Fact]
+    public async Task Copy_Cancelled_ThrowsOperationCanceled()
+    {
+        var target = Target();
+        var source = WriteFile(Path.Combine("src", "big.bin"), new string('a', 1024 * 1024));
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _service.CopyIntoAsync([source], target, cancellationToken: cts.Token));
+    }
+
+    private sealed class CollectingProgress(List<CopyProgress> sink) : IProgress<CopyProgress>
+    {
+        public void Report(CopyProgress value) => sink.Add(value);
+    }
 }

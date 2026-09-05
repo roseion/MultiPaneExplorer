@@ -5,12 +5,15 @@ public interface IFileOperationService
 {
     /// <summary>
     /// 把若干源路径（文件或目录）复制到目标目录内。
-    /// 目标存在同名项时不覆盖，自动改名为"xx - 副本"、"xx - 副本 (2)"……
+    /// 冲突处理：<paramref name="options"/> 未提供 OnConflict 回调时，同名冲突自动改名为
+    /// "xx - 副本"、"xx - 副本 (2)"……（兼容旧行为）；提供回调时，每个冲突（含目录内的文件）
+    /// 都会询问，由回调决定替换/跳过/保留两者。
     /// 单个源失败不影响其余条目，失败原因记录在 <see cref="CopyResult.Errors"/> 中。
     /// </summary>
     Task<CopyResult> CopyIntoAsync(
         IEnumerable<string> sourcePaths,
         string targetDirectory,
+        CopyOptions? options = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

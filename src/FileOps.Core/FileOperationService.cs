@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.IO;
 using Microsoft.VisualBasic.FileIO;
 
 namespace FileOps.Core;
@@ -10,47 +12,124 @@ public sealed class FileOperationService : IFileOperationService
     public async Task<CopyResult> CopyIntoAsync(
         IEnumerable<string> sourcePaths,
         string targetDirectory,
+        CopyOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(sourcePaths);
         if (!Directory.Exists(targetDirectory))
             throw new DirectoryNotFoundException($"目标目录不存在：{targetDirectory}");
 
-        var copied = 0;
-        var errors = new List<string>();
-
-        foreach (var source in sourcePaths)
+        var sources = sourcePaths.ToList();
+        var state = new CopyState(options, cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            TotalBytes = sources.Sum(SafeSize),
+        };
+
+        foreach (var source in sources)
+        {
+            state.CancellationToken.ThrowIfCancellationRequested();
             try
             {
-                if (File.Exists(source))
+                if (await CopyItemAsync(source, targetDirectory, Path.GetFileName(
+                        source.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)),
+                        isRoot: true, state).ConfigureAwait(false))
                 {
-                    var destination = GetAvailablePath(targetDirectory, Path.GetFileName(source));
-                    await CopyFileAsync(source, destination, cancellationToken).ConfigureAwait(false);
-                    copied++;
-                }
-                else if (Directory.Exists(source))
-                {
-                    var directoryName = Path.GetFileName(
-                        source.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-                    var destination = GetAvailablePath(targetDirectory, directoryName);
-                    await CopyDirectoryAsync(source, destination, cancellationToken).ConfigureAwait(false);
-                    copied++;
+                    state.CopiedCount++;
                 }
                 else
                 {
-                    errors.Add($"源不存在：{source}");
+                    state.SkippedCount++;
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException
                                           or System.Security.SecurityException)
             {
-                errors.Add($"复制失败：{source}（{ex.Message}）");
+                state.Errors.Add($"复制失败：{source}（{ex.Message}）");
             }
         }
 
-        return new CopyResult(copied, errors);
+        state.ReportProgress(currentFile: string.Empty, final: true);
+        return new CopyResult(state.CopiedCount, state.SkippedCount, state.Errors);
+    }
+
+    /// <summary>复制一个文件或整个目录（递归）。返回 false 表示因冲突被跳过。</summary>
+    private async Task<bool> CopyItemAsync(
+        string source,
+        string targetParent,
+        string displayName,
+        bool isRoot,
+        CopyState state)
+    {
+        if (File.Exists(source))
+            return await CopyFileCoreAsync(source, targetParent, displayName, state).ConfigureAwait(false);
+
+        if (!Directory.Exists(source))
+        {
+            if (isRoot)
+                state.Errors.Add($"源不存在：{source}");
+            return false;
+        }
+
+        var destination = state.ResolveConflict(
+            Path.Combine(targetParent, displayName),
+            source,
+            sourceIsDirectory: true);
+        if (destination is null)
+            return false;
+
+        Directory.CreateDirectory(destination);
+        foreach (var entry in Directory.EnumerateFileSystemEntries(source))
+        {
+            state.CancellationToken.ThrowIfCancellationRequested();
+            // 子项的复制/跳过不计入顶层结果统计，只计入进度与错误
+            await CopyItemAsync(entry, destination, Path.GetFileName(entry), isRoot: false, state)
+                .ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
+    private async Task<bool> CopyFileCoreAsync(
+        string source,
+        string targetParent,
+        string displayName,
+        CopyState state)
+    {
+        var destination = state.ResolveConflict(
+            Path.Combine(targetParent, displayName),
+            source,
+            sourceIsDirectory: false);
+        if (destination is null)
+        {
+            // 跳过也要推进进度条
+            state.DoneBytes += SafeSize(source);
+            state.ReportProgress(source);
+            return false;
+        }
+
+        var sourceLength = new FileInfo(source).Length;
+        await using var input = new FileStream(
+            source, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        await using var output = new FileStream(
+            destination, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize,
+            FileOptions.Asynchronous);
+
+        var buffer = new byte[BufferSize];
+        int read;
+        while ((read = await input.ReadAsync(buffer.AsMemory(0, buffer.Length), state.CancellationToken)
+                   .ConfigureAwait(false)) > 0)
+        {
+            await output.WriteAsync(buffer.AsMemory(0, read), state.CancellationToken).ConfigureAwait(false);
+            state.DoneBytes += read;
+            state.ReportProgress(source);
+        }
+
+        return true;
     }
 
     public Task<DeleteResult> DeleteToRecycleBinAsync(
@@ -166,33 +245,118 @@ public sealed class FileOperationService : IFileOperationService
         }
     }
 
-    private static async Task CopyFileAsync(string source, string destination, CancellationToken cancellationToken)
+    private static long SafeSize(string path)
     {
-        await using var input = new FileStream(
-            source, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
-        await using var output = new FileStream(
-            destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, BufferSize,
-            FileOptions.Asynchronous);
-        await input.CopyToAsync(output, cancellationToken).ConfigureAwait(false);
-    }
-
-    private static async Task CopyDirectoryAsync(string source, string destination, CancellationToken cancellationToken)
-    {
-        Directory.CreateDirectory(destination);
-
-        foreach (var file in Directory.EnumerateFiles(source))
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            await CopyFileAsync(file, Path.Combine(destination, Path.GetFileName(file)), cancellationToken)
-                .ConfigureAwait(false);
+            if (File.Exists(path))
+                return new FileInfo(path).Length;
+            if (Directory.Exists(path))
+            {
+                return new DirectoryInfo(path)
+                    .EnumerateFiles("*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true })
+                    .Sum(file => file.Length);
+            }
+        }
+        catch (Exception)
+        {
+            // 大小未知按 0 处理，不影响复制本身
         }
 
-        foreach (var subDirectory in Directory.EnumerateDirectories(source))
+        return 0;
+    }
+
+    /// <summary>一次复制操作的共享状态：进度、冲突回调与统计。</summary>
+    private sealed class CopyState
+    {
+        private long _lastReportTimestamp = Stopwatch.GetTimestamp();
+
+        public CopyState(CopyOptions? options, CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            await CopyDirectoryAsync(subDirectory, Path.Combine(destination, Path.GetFileName(subDirectory)), cancellationToken)
-                .ConfigureAwait(false);
+            Progress = options?.Progress;
+            OnConflict = options?.OnConflict;
+            CancellationToken = cancellationToken;
+        }
+
+        public IProgress<CopyProgress>? Progress { get; }
+        public Func<ConflictContext, ConflictDecision>? OnConflict { get; }
+        public CancellationToken CancellationToken { get; }
+
+        public long TotalBytes { get; set; }
+        public long DoneBytes { get; set; }
+        public int CopiedCount { get; set; }
+        public int SkippedCount { get; set; }
+        public int ConflictIndex { get; set; }
+        public List<string> Errors { get; } = new();
+
+        /// <summary>决定冲突目标的去向；返回 null 表示跳过。</summary>
+        public string? ResolveConflict(string destination, string source, bool sourceIsDirectory)
+        {
+            if (!File.Exists(destination) && !Directory.Exists(destination))
+                return destination;
+
+            var decision = OnConflict is null
+                ? ConflictDecision.KeepBoth
+                : OnConflict(new ConflictContext(
+                    MakeConflictItem(source, destination, sourceIsDirectory),
+                    ++ConflictIndex,
+                    TotalConflicts: -1));
+
+            return decision switch
+            {
+                ConflictDecision.Replace => destination,
+                ConflictDecision.Skip => null,
+                _ => GetAvailablePath(
+                    Path.GetDirectoryName(destination) ?? string.Empty,
+                    Path.GetFileName(destination)),
+            };
+        }
+
+        public void ReportProgress(string currentFile, bool final = false)
+        {
+            if (Progress is null)
+                return;
+
+            var now = Stopwatch.GetTimestamp();
+            if (!final && now - _lastReportTimestamp < Stopwatch.Frequency / 10)
+                return;
+
+            _lastReportTimestamp = now;
+            Progress.Report(new CopyProgress(
+                TotalBytes,
+                final ? TotalBytes : Math.Min(DoneBytes, TotalBytes),
+                currentFile));
+        }
+
+        private static ConflictItem MakeConflictItem(string source, string destination, bool sourceIsDirectory)
+        {
+            long sourceBytes;
+            DateTime sourceModified;
+            if (sourceIsDirectory)
+            {
+                sourceBytes = -1;
+                sourceModified = Directory.GetLastWriteTime(source);
+            }
+            else
+            {
+                sourceBytes = new FileInfo(source).Length;
+                sourceModified = File.GetLastWriteTime(source);
+            }
+
+            long existingBytes;
+            DateTime existingModified;
+            if (File.Exists(destination))
+            {
+                existingBytes = new FileInfo(destination).Length;
+                existingModified = File.GetLastWriteTime(destination);
+            }
+            else
+            {
+                existingBytes = -1;
+                existingModified = Directory.GetLastWriteTime(destination);
+            }
+
+            return new ConflictItem(source, destination, sourceBytes, sourceModified, existingBytes, existingModified);
         }
     }
 }
