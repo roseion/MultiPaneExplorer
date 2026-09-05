@@ -131,6 +131,7 @@
 
         <Grid>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="TreeColumn" Width="200" MinWidth="120" MaxWidth="520"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -151,7 +152,7 @@
                 </Border>
             </Popup>
 
-            <TreeView x:Name="DirTree" Grid.Column="0" Width="200" Margin="0,0,4,0"
+            <TreeView x:Name="DirTree" Grid.Column="0"
                       ItemsSource="{Binding TreeRoots}"
                       Visibility="{Binding ShowTree, Converter={StaticResource BoolToVis}}"
                       SelectedItemChanged="DirTree_SelectedItemChanged">
@@ -169,7 +170,13 @@
                 </TreeView.ItemTemplate>
             </TreeView>
 
-            <Border x:Name="DropZone" Grid.Column="1" BorderThickness="2" BorderBrush="Transparent">
+            <GridSplitter x:Name="TreeSplitter" Grid.Column="1" Width="6"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Background="#E5E5E5"
+                          ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
+                          ToolTip="拖拽调整文件树宽度"/>
+
+            <Border x:Name="DropZone" Grid.Column="2" BorderThickness="2" BorderBrush="Transparent">
             <ListView x:Name="EntryList"
                       ItemsSource="{Binding Entries}"
                       SelectionMode="Extended"

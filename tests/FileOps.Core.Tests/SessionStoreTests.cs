@@ -32,6 +32,7 @@ public sealed class SessionStoreTests : IDisposable
                 {
                     ShowTree = false,
                     ActiveTabIndex = 1,
+                    TreeWidth = 320,
                     Tabs = [new PaneTabState { Path = "C:\\Windows" }, new PaneTabState { Path = "D:\\" }],
                 },
                 new PaneState
@@ -52,6 +53,7 @@ public sealed class SessionStoreTests : IDisposable
         Assert.Equal(1.25, restored.UiScale);
         Assert.Equal(2, restored.Panes.Count);
         Assert.False(restored.Panes[0].ShowTree);
+        Assert.Equal(320, restored.Panes[0].TreeWidth);
         Assert.Equal(1, restored.Panes[0].ActiveTabIndex);
         Assert.Equal(2, restored.Panes[0].Tabs.Count);
         Assert.Equal("C:\\Windows", restored.Panes[0].Tabs[0].Path);

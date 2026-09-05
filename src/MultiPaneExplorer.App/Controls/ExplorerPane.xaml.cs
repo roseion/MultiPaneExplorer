@@ -32,6 +32,7 @@ public partial class ExplorerPane : UserControl
     private bool _rubberBandCtrl;
     private HashSet<FsEntry> _rubberBandBase = [];
     private RubberBandAdorner? _rubberAdorner;
+    private double _treeColumnWidth = 200;
     private readonly List<PaneViewModel> _tabs = [];
     private int _activeTabIndex;
 
@@ -97,8 +98,12 @@ public partial class ExplorerPane : UserControl
         };
         tab.PropertyChanged += (_, e) =>
         {
-            if (ReferenceEquals(tab, Vm) && e.PropertyName == nameof(PaneViewModel.ViewMode))
+            if (!ReferenceEquals(tab, Vm))
+                return;
+            if (e.PropertyName == nameof(PaneViewModel.ViewMode))
                 QueueThumbnailsForCurrentEntries();
+            else if (e.PropertyName == nameof(PaneViewModel.ShowTree))
+                UpdateTreeColumnVisibility();
         };
         tab.EntryFocusRequested += () =>
         {
@@ -151,7 +156,25 @@ public partial class ExplorerPane : UserControl
         RefreshTabStrip();
         QueueThumbnailsForCurrentEntries();
         RefreshBreadcrumb();
+        UpdateTreeColumnVisibility();
         EntryList.Focus();
+    }
+
+    /// <summary>文件树显示/隐藏时联动列宽与分隔条：隐藏前记忆宽度，恢复时还原。</summary>
+    private void UpdateTreeColumnVisibility()
+    {
+        var visible = Vm.ShowTree;
+        if (visible)
+        {
+            TreeColumn.Width = new GridLength(_treeColumnWidth);
+        }
+        else
+        {
+            if (TreeColumn.Width.IsAbsolute && TreeColumn.Width.Value >= TreeColumn.MinWidth)
+                _treeColumnWidth = TreeColumn.Width.Value;
+            TreeColumn.Width = new GridLength(0);
+        }
+        TreeSplitter.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>非详细信息视图下，为当前列表条目补齐大图标/缩略图。</summary>
@@ -226,6 +249,7 @@ public partial class ExplorerPane : UserControl
     public FileOps.Core.PaneState CaptureState() => new()
     {
         ShowTree = Vm.ShowTree,
+        TreeWidth = _treeColumnWidth,
         ActiveTabIndex = _activeTabIndex,
         Tabs = _tabs.Select(tab => new FileOps.Core.PaneTabState { Path = tab.CurrentPath, ViewMode = tab.ViewMode }).ToList(),
     };
@@ -253,6 +277,9 @@ public partial class ExplorerPane : UserControl
             tab.Initialize(null);
             _tabs.Add(tab);
         }
+
+        if (state.TreeWidth > 0)
+            _treeColumnWidth = Math.Clamp(state.TreeWidth, 120, 520);
 
         SwitchTab(Math.Clamp(state.ActiveTabIndex, 0, _tabs.Count - 1));
     }

@@ -16,6 +16,10 @@ public sealed class PaneTabState
 public sealed class PaneState
 {
     public bool ShowTree { get; set; }
+
+    /// <summary>文件树侧栏宽度（拖拽分隔条调节，随会话记忆）。</summary>
+    public double TreeWidth { get; set; } = 200;
+
     public int ActiveTabIndex { get; set; }
     public List<PaneTabState> Tabs { get; set; } = [];
 }
