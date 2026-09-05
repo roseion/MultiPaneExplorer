@@ -93,6 +93,11 @@ public partial class ExplorerPane : UserControl
             if (ReferenceEquals(tab, Vm) && e.PropertyName == nameof(PaneViewModel.ViewMode))
                 QueueThumbnailsForCurrentEntries();
         };
+        tab.EntryFocusRequested += () =>
+        {
+            if (ReferenceEquals(tab, Vm))
+                EntryList.Focus();
+        };
         tab.Entries.CollectionChanged += (_, e) =>
         {
             if (ReferenceEquals(tab, Vm) && tab.ViewMode != "Details" && e.NewItems is not null)
@@ -602,6 +607,43 @@ public partial class ExplorerPane : UserControl
         }
     }
 
+    // ---- 内联重命名（F2）：名称单元格内的编辑框 ----
+
+    private void RenameBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not TextBox box || box.DataContext is not FsEntry entry)
+            return;
+        box.Focus();
+        var extension = entry.IsDirectory ? string.Empty : Path.GetExtension(entry.Name);
+        box.Select(0, Math.Max(0, entry.Name.Length - extension.Length));
+    }
+
+    private void RenameBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox box || box.DataContext is not FsEntry entry)
+            return;
+        switch (e.Key)
+        {
+            case Key.Enter:
+                _ = Vm.CommitRenameAsync(entry, box.Text);
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                Vm.CancelRename();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void RenameBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is not TextBox box || box.DataContext is not FsEntry entry)
+            return;
+        if (!entry.IsRenaming)
+            return; // 已经提交或取消（回车路径会先处理）
+        _ = Vm.CommitRenameAsync(entry, box.Text);
+    }
+
     private void FilterBox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key is not Key.Escape)
@@ -761,6 +803,12 @@ public partial class ExplorerPane : UserControl
 
     private void EntryList_PreviewMouseMove(object sender, MouseEventArgs e)
     {
+        if (Vm.RenamingEntry is not null)
+        {
+            _dragArmed = false; // 内联重命名中禁止拖拽，避免编辑框被拖走
+            return;
+        }
+
         if (!_dragArmed || e.LeftButton != MouseButtonState.Pressed)
             return;
 

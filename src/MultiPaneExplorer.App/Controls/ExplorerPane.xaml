@@ -9,19 +9,43 @@
         <DataTemplate x:Key="IconTemplate">
             <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,1"/>
         </DataTemplate>
+        <DataTemplate x:Key="NameCellTemplate">
+            <Grid>
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                           Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVis}}"/>
+                <TextBox x:Name="RenameBox" Margin="0,-1" Padding="1,0" VerticalContentAlignment="Center"
+                         Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVis}}"
+                         Text="{Binding Name, Mode=OneWay}"
+                         Loaded="RenameBox_Loaded" KeyDown="RenameBox_KeyDown" LostFocus="RenameBox_LostFocus"/>
+            </Grid>
+        </DataTemplate>
         <DataTemplate x:Key="LargeIconTemplate">
             <StackPanel Width="100" Margin="6,4" HorizontalAlignment="Center">
                 <Image Source="{Binding LargeIcon}" Width="64" Height="64" Stretch="Uniform"
                        HorizontalAlignment="Center" Margin="2"/>
-                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxHeight="32"
-                           TextAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis"
-                           HorizontalAlignment="Center" ToolTip="{Binding Name}"/>
+                <Grid HorizontalAlignment="Center" Width="100">
+                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxHeight="32"
+                               TextAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis"
+                               HorizontalAlignment="Center" ToolTip="{Binding Name}"
+                               Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVis}}"/>
+                    <TextBox x:Name="RenameBox" FontSize="12" Margin="0,-1" Padding="1,0"
+                             Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVis}}"
+                             Text="{Binding Name, Mode=OneWay}"
+                             Loaded="RenameBox_Loaded" KeyDown="RenameBox_KeyDown" LostFocus="RenameBox_LostFocus"/>
+                </Grid>
             </StackPanel>
         </DataTemplate>
         <DataTemplate x:Key="ListTemplate">
             <StackPanel Orientation="Horizontal" Margin="4,1">
                 <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,1,6,1" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                <Grid>
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVis}}"/>
+                    <TextBox x:Name="RenameBox" MinWidth="120" Margin="0,-1" Padding="1,0" VerticalContentAlignment="Center"
+                             Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVis}}"
+                             Text="{Binding Name, Mode=OneWay}"
+                             Loaded="RenameBox_Loaded" KeyDown="RenameBox_KeyDown" LostFocus="RenameBox_LostFocus"/>
+                </Grid>
             </StackPanel>
         </DataTemplate>
         <ItemsPanelTemplate x:Key="LargeIconsPanel">
@@ -308,7 +332,7 @@
                 <ListView.View>
                     <GridView x:Name="EntryView">
                         <GridViewColumn x:Name="IconColumn" Header="" Width="26" CellTemplate="{StaticResource IconTemplate}"/>
-                        <GridViewColumn x:Name="NameColumn" Header="名称" Width="280" DisplayMemberBinding="{Binding Name}"/>
+                        <GridViewColumn x:Name="NameColumn" Header="名称" Width="280" CellTemplate="{StaticResource NameCellTemplate}"/>
                         <GridViewColumn x:Name="ModifiedColumn" Header="修改时间" Width="140" DisplayMemberBinding="{Binding Modified}"/>
                         <GridViewColumn x:Name="TypeColumn" Header="类型" Width="90" DisplayMemberBinding="{Binding Type}"/>
                         <GridViewColumn x:Name="SizeColumn" Header="大小" Width="90" DisplayMemberBinding="{Binding Size}"/>

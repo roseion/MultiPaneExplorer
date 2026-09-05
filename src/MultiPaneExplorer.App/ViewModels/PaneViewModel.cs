@@ -731,8 +731,9 @@ public partial class PaneViewModel : ObservableObject
         LoadEntries();
     }
 
+    /// <summary>内联重命名（F2）：把选中项的名称单元格切换为编辑框。</summary>
     [RelayCommand]
-    private async Task RenameAsync()
+    private void Rename()
     {
         if (IsRecycleBinView)
         {
@@ -740,31 +741,63 @@ public partial class PaneViewModel : ObservableObject
             return;
         }
 
-        if (SelectedPaths.Count != 1)
+        var entry = SelectedEntries.Count == 1 ? SelectedEntries[0] : null;
+        if (entry is null)
         {
             StatusText = "请先选中一个要重命名的项目";
             return;
         }
 
-        var path = SelectedPaths[0];
-        var dialog = new RenameDialog(Path.GetFileName(path))
-        {
-            Owner = System.Windows.Application.Current.MainWindow,
-        };
-        if (dialog.ShowDialog() != true)
+        CancelRename(); // 清理可能残留的其它编辑态
+        RenamingEntry = entry;
+        entry.IsRenaming = true;
+        StatusText = "输入新名称，回车确认，Esc 取消";
+    }
+
+    /// <summary>当前正在内联重命名的条目；null 表示没有（视图据此禁用拖拽）。</summary>
+    public FsEntry? RenamingEntry { get; private set; }
+
+    /// <summary>内联重命名结束后请求列表回收键盘焦点。</summary>
+    public event Action? EntryFocusRequested;
+
+    /// <summary>结束内联编辑并还焦点到列表。</summary>
+    public void CancelRename()
+    {
+        if (RenamingEntry is null)
             return;
+        RenamingEntry.IsRenaming = false;
+        RenamingEntry = null;
+        EntryFocusRequested?.Invoke();
+    }
+
+    /// <summary>提交内联重命名；名称非法/重名失败时保持编辑态并提示。</summary>
+    public async Task CommitRenameAsync(FsEntry entry, string newName)
+    {
+        newName = newName.Trim();
+        if (newName.Length == 0 || string.Equals(newName, entry.Name, StringComparison.Ordinal))
+        {
+            CancelRename();
+            return;
+        }
+
+        if (newName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            StatusText = $"名称包含非法字符：{newName}";
+            return;
+        }
 
         try
         {
-            var newPath = await _fileOps.RenameAsync(path, dialog.InputText.Trim());
-            UndoHub.Service.Push(new RenameOperation(_fileOps, path, newPath));
+            var newPath = await _fileOps.RenameAsync(entry.FullPath, newName);
+            UndoHub.Service.Push(new RenameOperation(_fileOps, entry.FullPath, newPath));
             StatusText = $"已重命名为：{Path.GetFileName(newPath)}";
+            CancelRename();
+            LoadEntries();
         }
         catch (Exception ex)
         {
             StatusText = $"重命名失败：{ex.Message}";
         }
-        LoadEntries();
     }
 
     [RelayCommand]

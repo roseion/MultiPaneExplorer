@@ -33,6 +33,21 @@ public sealed class FsEntry : System.ComponentModel.INotifyPropertyChanged
         }
     }
 
+    private bool _isRenaming;
+
+    /// <summary>true 时名称单元格切换为内联编辑框（F2 原位重命名）。</summary>
+    public bool IsRenaming
+    {
+        get => _isRenaming;
+        set
+        {
+            if (_isRenaming == value)
+                return;
+            _isRenaming = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsRenaming)));
+        }
+    }
+
     public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
     public string Type =>
