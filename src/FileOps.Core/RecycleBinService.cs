@@ -118,12 +118,14 @@ public sealed class RecycleBinService : IRecycleBinService
             string originalPath;
             if (version >= 2)
             {
-                if (bytes.Length < 32)
+                // v2 布局：[0..4) 版本、[4..8) 未知、[8..16) 大小、[16..24) 删除时间、
+                // [24..28) 名称字符数（INT32，含结尾 \0）、[28..) UTF-16 名称
+                if (bytes.Length < 28)
                     return null;
-                var nameChars = (int)BitConverter.ToInt64(bytes, 24);
-                if (nameChars <= 0 || bytes.Length < 32 + nameChars * 2)
+                var nameChars = BitConverter.ToInt32(bytes, 24);
+                if (nameChars <= 0 || bytes.Length < 28 + nameChars * 2)
                     return null;
-                originalPath = Encoding.Unicode.GetString(bytes, 32, nameChars * 2).TrimEnd('\0');
+                originalPath = Encoding.Unicode.GetString(bytes, 28, nameChars * 2).TrimEnd('\0');
             }
             else
             {

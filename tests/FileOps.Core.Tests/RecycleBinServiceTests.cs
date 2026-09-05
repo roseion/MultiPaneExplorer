@@ -184,17 +184,17 @@ public sealed class RecycleBinServiceTests : IDisposable
         return infoPath;
     }
 
-    /// <summary>$I v2：4 字节版本 + 4 字节填充 + 8 字节大小 + 8 字节 FILETIME + 8 字节名称长度 + UTF-16 名称。</summary>
+    /// <summary>$I v2：4 字节版本 + 4 字节未知 + 8 字节大小 + 8 字节 FILETIME + 4 字节名称字符数 + UTF-16 名称。</summary>
     private static byte[] BuildInfoV2(long size, DateTime deletionTime, string originalPath)
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream);
         writer.Write(2); // 版本
-        writer.Write(0); // v2 无盘符字段，填充
+        writer.Write(0); // 未知/填充字段
         writer.Write(size);
         writer.Write(deletionTime.ToFileTime());
         var nameBytes = Encoding.Unicode.GetBytes(originalPath + "\0"); // UTF-16LE，与真实 $I 一致
-        writer.Write((long)(nameBytes.Length / 2)); // 含结尾 \0 的字符数
+        writer.Write(nameBytes.Length / 2); // 含结尾 \0 的字符数（INT32）
         writer.Write(nameBytes);
         return stream.ToArray();
     }
