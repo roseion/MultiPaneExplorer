@@ -1,12 +1,21 @@
-﻿<Window x:Class="MultiPaneExplorer.App.MainWindow"
+<Window x:Class="MultiPaneExplorer.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MultiPaneExplorer.App"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        xmlns:controls="clr-namespace:MultiPaneExplorer.App.Controls"
+        Title="多栏资源管理器" Width="1280" Height="720"
+        WindowStartupLocation="CenterScreen">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
+        <controls:ExplorerPane x:Name="LeftPane" Grid.Column="0"/>
+        <GridSplitter Grid.Column="1" Width="6"
+                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Background="#DDDDDD"
+                      ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"/>
+        <controls:ExplorerPane x:Name="RightPane" Grid.Column="2" FocusOnLoad="False"/>
     </Grid>
 </Window>
