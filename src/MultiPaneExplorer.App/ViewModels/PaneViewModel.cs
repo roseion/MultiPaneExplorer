@@ -235,8 +235,8 @@ public partial class PaneViewModel : ObservableObject
         LoadEntries();
     }
 
-    /// <summary>地址栏回车：支持目录、文件（定位到所在目录）和"此电脑"。</summary>
-    public void NavigateToAddress(string text)
+    /// <summary>地址栏回车：支持目录、文件（定位到所在目录）和"此电脑"。返回是否导航成功。</summary>
+    public bool NavigateToAddress(string text)
     {
         var trimmed = text.Trim();
         var root = Path.GetPathRoot(trimmed);
@@ -246,28 +246,29 @@ public partial class PaneViewModel : ObservableObject
         if (trimmed.Length == 0 || trimmed == "此电脑")
         {
             NavigateTo(null);
-            return;
+            return true;
         }
 
         if (trimmed is "回收站" or SpecialLocations.RecycleBin)
         {
             NavigateTo(SpecialLocations.RecycleBin);
-            return;
+            return true;
         }
 
         if (Directory.Exists(trimmed))
         {
             NavigateTo(Path.GetFullPath(trimmed));
-            return;
+            return true;
         }
 
         if (File.Exists(trimmed))
         {
             NavigateTo(Path.GetDirectoryName(Path.GetFullPath(trimmed)));
-            return;
+            return true;
         }
 
         StatusText = $"路径不存在：{text}";
+        return false;
     }
 
     /// <summary>让文件树定位并选中当前目录（找不到时保持树状态不变）。</summary>

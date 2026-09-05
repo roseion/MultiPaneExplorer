@@ -21,6 +21,7 @@ public partial class ExplorerPane : UserControl
 
     private bool _initialized;
     private bool _revealing;
+    private bool _addressEditing;
     private Point _dragStartPosition;
     private bool _dragArmed;
     private DragDropEffects _pendingDropEffect;
@@ -52,6 +53,7 @@ public partial class ExplorerPane : UserControl
             _initialized = true;
             Vm.Initialize(InitialPath);
             UpdateSortHeaders();
+            RefreshBreadcrumb();
             RefreshTabStrip();
             if (FocusOnLoad)
                 EntryList.Focus();
@@ -136,6 +138,7 @@ public partial class ExplorerPane : UserControl
         }
         RefreshTabStrip();
         QueueThumbnailsForCurrentEntries();
+        RefreshBreadcrumb();
         EntryList.Focus();
     }
 
@@ -247,6 +250,11 @@ public partial class ExplorerPane : UserControl
     /// <summary>窗格目录变化时（含列表/地址栏/前进后退），让文件树跟随定位。</summary>
     private void OnCurrentPathChanged(string? path)
     {
+        _addressEditing = false;
+        AddressBox.Visibility = Visibility.Collapsed;
+        CrumbBar.Visibility = Visibility.Visible;
+        RefreshBreadcrumb();
+
         if (path is null)
             return;
         _revealing = true;
@@ -279,10 +287,219 @@ public partial class ExplorerPane : UserControl
         if (e.Key is not Key.Enter)
             return;
         AddressSuggestPopup.IsOpen = false;
-        Vm.NavigateToAddress(Vm.PathText);
-        EntryList.Focus();
+        if (Vm.NavigateToAddress(Vm.PathText))
+        {
+            // 导航成功才退出编辑态；路径不存在时留在输入框便于修改
+            ExitAddressEditMode(revert: false, refocusList: true);
+        }
         e.Handled = true;
     }
+
+    // ---- 面包屑地址栏：常态显示层级段，点击空白进入编辑态 ----
+
+    private void CrumbBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => EnterAddressEditMode();
+
+    private void EnterAddressEditMode()
+    {
+        if (_addressEditing)
+            return;
+        _addressEditing = true;
+        CrumbBar.Visibility = Visibility.Collapsed;
+        AddressBox.Visibility = Visibility.Visible;
+        AddressBox.Text = Vm.CurrentPath is null
+            ? string.Empty
+            : Vm.CurrentPath == SpecialLocations.RecycleBin ? "回收站" : Vm.CurrentPath;
+        AddressBox.CaretIndex = AddressBox.Text.Length;
+        AddressBox.Focus();
+    }
+
+    private void ExitAddressEditMode(bool revert, bool refocusList)
+    {
+        if (!_addressEditing)
+            return;
+        _addressEditing = false;
+        AddressBox.Visibility = Visibility.Collapsed;
+        CrumbBar.Visibility = Visibility.Visible;
+        if (revert)
+            RefreshBreadcrumb();
+        if (refocusList)
+            EntryList.Focus();
+    }
+
+    private void AddressBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (!_addressEditing)
+            return;
+        // 焦点移入补全列表时不退出（键盘 ↓ 后回车/返回仍可用）
+        if (e.NewFocus == SuggestList || SuggestList.IsKeyboardFocusWithin)
+            return;
+        ExitAddressEditMode(revert: true, refocusList: false);
+    }
+
+    /// <summary>按当前目录重建面包屑段；每段可点击跳转、可下拉列出其子目录。</summary>
+    private void RefreshBreadcrumb()
+    {
+        if (_addressEditing)
+            return;
+
+        CrumbStrip.Children.Clear();
+        var path = Vm.CurrentPath;
+
+        if (path is null)
+        {
+            CrumbStrip.Children.Add(BuildCrumbSegment("此电脑", null, showLeadingChevron: false));
+            return;
+        }
+        if (path == SpecialLocations.RecycleBin)
+        {
+            CrumbStrip.Children.Add(BuildCrumbSegment("回收站", SpecialLocations.RecycleBin, showLeadingChevron: false));
+            return;
+        }
+
+        CrumbStrip.Children.Add(BuildCrumbSegment("此电脑", null, showLeadingChevron: false));
+
+        var root = Path.GetPathRoot(path) ?? string.Empty;
+        if (root.Length > 0)
+            CrumbStrip.Children.Add(BuildCrumbSegment(root, root, showLeadingChevron: true));
+
+        var current = root;
+        var rest = path[root.Length..].Trim(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        foreach (var part in rest.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                     StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, part);
+            CrumbStrip.Children.Add(BuildCrumbSegment(part, current, showLeadingChevron: true));
+        }
+    }
+
+    /// <summary>构造一段：文本按钮（跳转到该层）+ 下拉箭头（列出该层子目录）+ 段间分隔符。</summary>
+    private UIElement BuildCrumbSegment(string label, string? navigatePath, bool showLeadingChevron)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+
+        if (showLeadingChevron)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "›",
+                Margin = new Thickness(1, 0, 1, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = Brushes.Gray,
+            });
+        }
+
+        var button = new Button
+        {
+            Content = label,
+            Padding = new Thickness(3, 1, 3, 1),
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        button.Click += (_, _) =>
+        {
+            if (navigatePath is null)
+                Vm.NavigateTo(null);
+            else
+                Vm.NavigateTo(navigatePath);
+        };
+        panel.Children.Add(button);
+
+        var dropdownPath = navigatePath is null ? null : navigatePath;
+        if (dropdownPath is not null)
+        {
+            var arrow = new ToggleButton
+            {
+                Content = "▼",
+                FontSize = 8,
+                Width = 14,
+                Padding = new Thickness(0),
+                BorderThickness = new Thickness(0),
+                Background = Brushes.Transparent,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            arrow.Click += (_, _) => OpenCrumbDropdown(arrow, dropdownPath);
+            panel.Children.Add(arrow);
+        }
+
+        return panel;
+    }
+
+    /// <summary>展开某段的子目录下拉（"此电脑"段列出驱动器）；单击即跳转。</summary>
+    private void OpenCrumbDropdown(ToggleButton toggle, string? path)
+    {
+        var list = new ListBox
+        {
+            BorderThickness = new Thickness(0),
+            MinWidth = 200,
+            MaxHeight = 260,
+        };
+
+        var items = new List<string>();
+        if (path is null)
+        {
+            items.AddRange(DriveInfo.GetDrives()
+                .Where(drive => drive.IsReady)
+                .OrderBy(drive => drive.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(drive => drive.Name));
+        }
+        else
+        {
+            try
+            {
+                items.AddRange(Directory.EnumerateDirectories(path)
+                    .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase));
+            }
+            catch (Exception)
+            {
+                // 不可读目录：下拉显示空态
+            }
+        }
+
+        if (items.Count == 0)
+        {
+            list.Items.Add(new ListBoxItem { Content = "（无子文件夹）", IsEnabled = false });
+        }
+        else
+        {
+            list.ItemsSource = items;
+            list.SelectedItem = Vm.CurrentPath; // 定位当前所在层级（若有）
+        }
+
+        list.PreviewMouseLeftButtonDown += (_, e) =>
+        {
+            if (e.OriginalSource is not DependencyObject source ||
+                ItemsControl.ContainerFromElement(list, source) is not ListBoxItem item ||
+                item.DataContext is not string fullPath)
+                return;
+            toggle.IsChecked = false;
+            crumbDropdownPopup!.IsOpen = false;
+            Vm.NavigateTo(fullPath);
+            e.Handled = true;
+        };
+
+        crumbDropdownPopup?.IsOpen = false;
+        var popup = new System.Windows.Controls.Primitives.Popup
+        {
+            PlacementTarget = toggle,
+            Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+            StaysOpen = false,
+            AllowsTransparency = true,
+            PopupAnimation = System.Windows.Controls.Primitives.PopupAnimation.Fade,
+            Child = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(1),
+                Child = list,
+            },
+        };
+        popup.Closed += (_, _) => toggle.IsChecked = false;
+        crumbDropdownPopup = popup;
+        popup.IsOpen = true;
+    }
+
+    private System.Windows.Controls.Primitives.Popup? crumbDropdownPopup;
 
     // ---- 地址栏补全：输入时在当前目录条目中匹配，Popup 下拉选择 ----
 
@@ -312,18 +529,20 @@ public partial class ExplorerPane : UserControl
 
     private void AddressBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (!AddressSuggestPopup.IsOpen)
-            return;
-
         switch (e.Key)
         {
-            case Key.Down:
+            case Key.Down when AddressSuggestPopup.IsOpen:
                 SuggestList.Focus();
                 SuggestList.SelectedIndex = 0;
                 e.Handled = true;
                 break;
-            case Key.Escape:
+            case Key.Escape when AddressSuggestPopup.IsOpen:
                 AddressSuggestPopup.IsOpen = false;
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                // Esc：放弃编辑，还原面包屑显示
+                ExitAddressEditMode(revert: true, refocusList: true);
                 e.Handled = true;
                 break;
         }
@@ -373,6 +592,7 @@ public partial class ExplorerPane : UserControl
         if (entry.IsDirectory)
         {
             Vm.NavigateTo(entry.FullPath);
+            ExitAddressEditMode(revert: false, refocusList: true);
         }
         else
         {
