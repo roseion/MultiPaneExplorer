@@ -51,7 +51,9 @@ public sealed class UndoRedoService
         var operation = _undo.Peek();
         try
         {
-            await operation.UndoAsync(cancellationToken).ConfigureAwait(false);
+            // 不用 ConfigureAwait(false)：Changed 事件供 UI（撤销/重做按钮状态）使用，
+            // 必须回到调用线程，否则 WPF 触发跨线程访问异常
+            await operation.UndoAsync(cancellationToken);
         }
         finally
         {
@@ -74,7 +76,8 @@ public sealed class UndoRedoService
         var operation = _redo.Peek();
         try
         {
-            await operation.RedoAsync(cancellationToken).ConfigureAwait(false);
+            // 同 UndoAsync：Changed 事件保持在调用线程
+            await operation.RedoAsync(cancellationToken);
         }
         finally
         {

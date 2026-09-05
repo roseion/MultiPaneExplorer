@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO;
 using FileOps.Core;
 using Xunit;
@@ -246,6 +247,91 @@ public sealed class UndoRedoTests : IDisposable
     }
 
     // ---- 测试替身 ----
+
+    /// <summary>Changed 事件供 UI 刷新按钮使用，必须回到调用 UndoAsync/RedoAsync 的线程，不能被 ConfigureAway。</summary>
+    [Fact]
+    public void UndoAsync_RaisesChangedOnCallerThread()
+    {
+        var service = new UndoRedoService();
+        service.Push(new YieldingOperation());
+        int? changedThreadId = null;
+        service.Changed += () => changedThreadId = Environment.CurrentManagedThreadId;
+        var callerThreadId = Environment.CurrentManagedThreadId;
+
+        var context = new PumpingSynchronizationContext();
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(context);
+        try
+        {
+            var task = service.UndoAsync();
+            context.RunUntil(task);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        Assert.Equal(callerThreadId, changedThreadId);
+    }
+
+    [Fact]
+    public void RedoAsync_RaisesChangedOnCallerThread()
+    {
+        var service = new UndoRedoService();
+        service.Push(new YieldingOperation());
+        int? changedThreadId = null;
+        service.Changed += () => changedThreadId = Environment.CurrentManagedThreadId;
+        var callerThreadId = Environment.CurrentManagedThreadId;
+
+        var context = new PumpingSynchronizationContext();
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(context);
+        try
+        {
+            var undoTask = service.UndoAsync();
+            context.RunUntil(undoTask);
+
+            var redoTask = service.RedoAsync();
+            context.RunUntil(redoTask);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        Assert.Equal(callerThreadId, changedThreadId);
+    }
+
+    /// <summary>内部异步让出线程的操作（模拟真实 IO 回到线程池）。</summary>
+    private sealed class YieldingOperation : IUndoableOperation
+    {
+        public string Description => "异步操作";
+        public bool CanUndo => true;
+        public bool CanRedo => true;
+
+        public async Task UndoAsync(CancellationToken cancellationToken = default) => await Task.Yield();
+
+        public async Task RedoAsync(CancellationToken cancellationToken = default) => await Task.Yield();
+    }
+
+    /// <summary>队列式同步上下文：Post 进队，由测试线程泵执行，模拟 UI 线程的消息循环。</summary>
+    private sealed class PumpingSynchronizationContext : SynchronizationContext
+    {
+        private readonly BlockingCollection<(SendOrPostCallback Callback, object? State)> _queue = new();
+
+        public override void Post(SendOrPostCallback d, object? state) => _queue.Add((d, state));
+
+        /// <summary>泵队列直到任务完成（内部 await 若 ConfigureAway，任务会在线程池完成，绕过本上下文）。</summary>
+        public void RunUntil(Task task)
+        {
+            while (!task.IsCompleted)
+            {
+                if (!_queue.TryTake(out var item, TimeSpan.FromMilliseconds(1000)))
+                    continue;
+                item.Callback(item.State);
+            }
+        }
+    }
 
     private sealed class FakeOperation(
         string description,

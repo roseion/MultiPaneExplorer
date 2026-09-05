@@ -278,6 +278,13 @@ public partial class MainWindow : Window
 
     private void RefreshUndoButtons()
     {
+        // Changed 事件理论上在 UI 线程触发（服务端已保证），此处封送兜底防回归
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(RefreshUndoButtons);
+            return;
+        }
+
         UndoButton.IsEnabled = UndoHub.Service.CanUndo;
         UndoButton.ToolTip = UndoHub.Service.UndoDescription is { } undoDescription
             ? $"撤销：{undoDescription} (Ctrl+Z)"
