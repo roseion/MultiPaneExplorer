@@ -22,6 +22,7 @@ public partial class ExplorerPane : UserControl
     private bool _revealing;
     private Point _dragStartPosition;
     private bool _dragArmed;
+    private DragDropEffects _pendingDropEffect;
 
     private static readonly Dictionary<string, string> SortHeaderTitles = new()
     {
@@ -199,7 +200,9 @@ public partial class ExplorerPane : UserControl
     private void EntryList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _dragStartPosition = e.GetPosition(EntryList);
-        _dragArmed = EntryList.SelectedItem is not null;
+        // 一律先武装；真正能否拖拽到 MouseMove 时判定——那时 WPF 已完成本次按下的选中更新，
+        // 按住 Ctrl/Shift 直接开拖（此前无选中）也能正常触发
+        _dragArmed = true;
     }
 
     private void EntryList_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -234,13 +237,15 @@ public partial class ExplorerPane : UserControl
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop) || Vm.CurrentPath is null)
         {
+            _pendingDropEffect = DragDropEffects.None;
             e.Effects = DragDropEffects.None;
             DropZone.BorderBrush = Brushes.IndianRed;
             e.Handled = true;
             return;
         }
 
-        e.Effects = DecideDropEffect(e);
+        _pendingDropEffect = DecideDropEffect(e);
+        e.Effects = _pendingDropEffect;
         DropZone.BorderBrush = DropHintBrush;
         e.Handled = true;
     }
@@ -264,8 +269,9 @@ public partial class ExplorerPane : UserControl
     private void EntryList_Drop(object sender, DragEventArgs e)
     {
         DropZone.BorderBrush = Brushes.Transparent;
+        // Drop 事件的 e.Effects 不保证携带最后一次 DragOver 的结果，用自己记录的值
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } paths)
-            _ = Vm.PastePathsAsync(paths, move: e.Effects.HasFlag(DragDropEffects.Move));
+            _ = Vm.PastePathsAsync(paths, move: _pendingDropEffect.HasFlag(DragDropEffects.Move));
         e.Handled = true;
     }
 }
