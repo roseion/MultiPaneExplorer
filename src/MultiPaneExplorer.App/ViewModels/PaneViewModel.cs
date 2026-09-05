@@ -16,12 +16,22 @@ public partial class PaneViewModel : ObservableObject
     private readonly IShortcutService _shortcuts;
     private readonly Stack<string?> _back = new();
     private readonly Stack<string?> _forward = new();
+    private readonly System.Windows.Threading.DispatcherTimer _refreshTimer;
+    private FileSystemWatcher? _watcher;
     private bool _initialized;
+    private bool _isBusy;
 
     public PaneViewModel(IFileOperationService? fileOps = null, IShortcutService? shortcuts = null)
     {
         _fileOps = fileOps ?? new FileOperationService();
         _shortcuts = shortcuts ?? new WshShortcutService();
+        _refreshTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        _refreshTimer.Tick += (_, _) =>
+        {
+            _refreshTimer.Stop();
+            if (_initialized && !_isBusy)
+                LoadEntries();
+        };
     }
 
     /// <summary>当前目录；null 表示"此电脑"（驱动器列表）。</summary>
@@ -65,6 +75,7 @@ public partial class PaneViewModel : ObservableObject
     {
         PathText = value ?? "此电脑";
         UpCommand.NotifyCanExecuteChanged();
+        RestartWatcher(value);
         CurrentPathChanged?.Invoke(value);
     }
 
@@ -137,6 +148,50 @@ public partial class PaneViewModel : ObservableObject
                 return;
         }
     }
+
+    // ---- 目录变化自动刷新 ----
+
+    /// <summary>导航后把 FileSystemWatcher 切换到新目录（"此电脑"下不监视）。</summary>
+    private void RestartWatcher(string? path)
+    {
+        if (_watcher is not null)
+        {
+            _watcher.Dispose();
+            _watcher = null;
+        }
+
+        if (path is null || !Directory.Exists(path))
+            return;
+
+        try
+        {
+            var watcher = new FileSystemWatcher(path)
+            {
+                IncludeSubdirectories = false,
+                EnableRaisingEvents = true,
+            };
+            watcher.Created += (_, _) => ScheduleAutoRefresh();
+            watcher.Deleted += (_, _) => ScheduleAutoRefresh();
+            watcher.Renamed += (_, _) => ScheduleAutoRefresh();
+            watcher.Changed += (_, _) => ScheduleAutoRefresh();
+            watcher.Error += (_, _) => ScheduleAutoRefresh();
+            _watcher = watcher;
+        }
+        catch (Exception ex) when (ex is IOException or System.Security.SecurityException or ArgumentException)
+        {
+            // 目录不可监视时退化为手动刷新（F5）
+        }
+    }
+
+    /// <summary>文件系统事件防抖：重置 300ms 定时器，静止后统一刷新一次。</summary>
+    private void ScheduleAutoRefresh() =>
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+        {
+            if (!_initialized || _isBusy)
+                return;
+            _refreshTimer.Stop();
+            _refreshTimer.Start();
+        });
 
     partial void OnShowHiddenFilesChanged(bool value) => LoadEntries();
 
@@ -285,7 +340,8 @@ public partial class PaneViewModel : ObservableObject
         await PastePathsAsync(sources);
     }
 
-    /// <summary>把指定路径列表粘贴（复制）到当前目录；剪贴板粘贴与拖拽放置共用。</summary>
+    /// <summary>把指定路径列表粘贴（复制）到当前目录；剪贴板粘贴与拖拽放置共用。
+    /// 复制在后台线程执行，进度实时更新状态栏，同名冲突弹出对话框询问。</summary>
     public async Task PastePathsAsync(IReadOnlyList<string> sources)
     {
         if (CurrentPath is null)
@@ -295,20 +351,69 @@ public partial class PaneViewModel : ObservableObject
         }
 
         var target = CurrentPath;
+        var cts = new CancellationTokenSource();
+        ConflictDecision? remembered = null;
+        var options = new CopyOptions
+        {
+            Progress = new Progress<CopyProgress>(p => StatusText =
+                p.TotalBytes > 0 && p.DoneBytes >= p.TotalBytes
+                    ? "粘贴完成，正在刷新列表…"
+                    : $"正在粘贴… {FsEntry.FormatSize(p.DoneBytes)} / {FsEntry.FormatSize(p.TotalBytes)}（{p.Percent}%）"),
+            OnConflict = context =>
+            {
+                if (remembered.HasValue)
+                    return remembered.Value;
+
+                var (decision, applyToAll, cancelled) = AskConflict(context);
+                if (cancelled)
+                {
+                    cts.Cancel();
+                    return ConflictDecision.Skip;
+                }
+
+                if (applyToAll)
+                    remembered = decision;
+                return decision;
+            },
+        };
+
+        _isBusy = true;
         StatusText = $"正在粘贴 {sources.Count} 个项目…";
         try
         {
-            var result = await Task.Run(() => _fileOps.CopyIntoAsync(sources, target));
+            var result = await Task.Run(() => _fileOps.CopyIntoAsync(sources, target, options, cts.Token));
             StatusText = result.HasErrors
-                ? $"粘贴完成：{result.CopiedCount} 个成功，{result.Errors.Count} 个失败"
-                : $"已粘贴 {result.CopiedCount} 个项目";
+                ? $"粘贴完成：{result.CopiedCount} 个成功，{result.SkippedCount} 个跳过，{result.Errors.Count} 个失败"
+                : result.SkippedCount > 0
+                    ? $"已粘贴 {result.CopiedCount} 个项目，跳过 {result.SkippedCount} 个"
+                    : $"已粘贴 {result.CopiedCount} 个项目";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText = "粘贴已取消";
         }
         catch (Exception ex)
         {
             StatusText = $"粘贴失败：{ex.Message}";
         }
+        finally
+        {
+            _isBusy = false;
+        }
         LoadEntries();
     }
+
+    /// <summary>冲突回调发生在后台复制线程，把询问转发到 UI 线程弹窗（复制流程暂停等待答复）。</summary>
+    private (ConflictDecision Decision, bool ApplyToAll, bool Cancelled) AskConflict(ConflictContext context) =>
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            var dialog = new Views.ConflictDialog(context.Item, context.Index)
+            {
+                Owner = System.Windows.Application.Current.MainWindow,
+            };
+            dialog.ShowDialog();
+            return (dialog.Decision, dialog.ApplyToAll, dialog.DialogResult != true);
+        });
 
     [RelayCommand]
     private async Task DeleteAsync()
