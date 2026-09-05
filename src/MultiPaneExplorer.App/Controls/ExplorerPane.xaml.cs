@@ -253,13 +253,14 @@ public partial class ExplorerPane : UserControl
 
     public void FocusList() => EntryList.Focus();
 
-    /// <summary>窗格目录变化时（含列表/地址栏/前进后退），让文件树跟随定位。</summary>
+    /// <summary>窗格目录变化时（含列表/地址栏/前进后退），让文件树跟随定位并刷新列头文案。</summary>
     private void OnCurrentPathChanged(string? path)
     {
         _addressEditing = false;
         AddressBox.Visibility = Visibility.Collapsed;
         CrumbBar.Visibility = Visibility.Visible;
         RefreshBreadcrumb();
+        UpdateSortHeaders(); // 回收站视图下"修改时间"列头切换为"删除时间"
 
         if (path is null)
             return;
@@ -376,6 +377,9 @@ public partial class ExplorerPane : UserControl
             current = Path.Combine(current, part);
             CrumbStrip.Children.Add(BuildCrumbSegment(part, current, showLeadingChevron: true));
         }
+
+        // 深层路径超出宽度时优先保证"当前目录段 + 其下拉箭头"可见
+        CrumbScroll.ScrollToEnd();
     }
 
     /// <summary>构造一段：文本按钮（跳转到该层）+ 下拉箭头（列出该层子目录）+ 段间分隔符。</summary>
@@ -504,7 +508,9 @@ public partial class ExplorerPane : UserControl
         };
         popup.Closed += (_, _) => toggle.IsChecked = false;
         crumbDropdownPopup = popup;
-        popup.IsOpen = true;
+        // Click 处于鼠标抬起处理过程中，同步开 Popup 会被随后的捕获释放立即关闭（同 ContextMenu 坑），异步打开规避
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+            new Action(() => popup.IsOpen = true));
     }
 
     private System.Windows.Controls.Primitives.Popup? crumbDropdownPopup;

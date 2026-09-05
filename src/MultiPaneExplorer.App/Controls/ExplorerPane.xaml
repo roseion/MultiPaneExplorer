@@ -73,7 +73,8 @@
                             BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
                             MouseLeftButtonDown="CrumbBar_MouseLeftButtonDown"
                             ToolTip="点击空白处输入路径；点击各段跳转，▼ 展开子目录">
-                        <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                        <ScrollViewer x:Name="CrumbScroll" HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Disabled"
                                       VerticalAlignment="Center">
                             <StackPanel x:Name="CrumbStrip" Orientation="Horizontal"/>
                         </ScrollViewer>
