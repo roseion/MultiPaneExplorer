@@ -14,17 +14,24 @@ public partial class PaneViewModel : ObservableObject
 {
     private readonly IFileOperationService _fileOps;
     private readonly IShortcutService _shortcuts;
+    private readonly ISearchService _search;
     private readonly Stack<string?> _back = new();
     private readonly Stack<string?> _forward = new();
     private readonly System.Windows.Threading.DispatcherTimer _refreshTimer;
     private FileSystemWatcher? _watcher;
+    private CancellationTokenSource? _searchCts;
+    private int _searchGeneration;
     private bool _initialized;
     private bool _isBusy;
 
-    public PaneViewModel(IFileOperationService? fileOps = null, IShortcutService? shortcuts = null)
+    public PaneViewModel(
+        IFileOperationService? fileOps = null,
+        IShortcutService? shortcuts = null,
+        ISearchService? search = null)
     {
         _fileOps = fileOps ?? new FileOperationService();
         _shortcuts = shortcuts ?? new WshShortcutService();
+        _search = search ?? new FileSystemSearchService();
         _refreshTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
         _refreshTimer.Tick += (_, _) =>
         {
@@ -62,6 +69,14 @@ public partial class PaneViewModel : ObservableObject
     [ObservableProperty]
     private bool _sortDescending;
 
+    /// <summary>列表过滤/搜索关键字；导航时自动清空。</summary>
+    [ObservableProperty]
+    private string _filterText = "";
+
+    /// <summary>true=在当前目录及全部子目录中搜索；false=仅过滤当前列表。</summary>
+    [ObservableProperty]
+    private bool _searchSubdirectories;
+
     /// <summary>文件树根节点（驱动器）。</summary>
     public ObservableCollection<FsTreeNode> TreeRoots { get; } = new();
 
@@ -76,7 +91,91 @@ public partial class PaneViewModel : ObservableObject
         PathText = value ?? "此电脑";
         UpCommand.NotifyCanExecuteChanged();
         RestartWatcher(value);
+        if (FilterText.Length > 0)
+            FilterText = ""; // 导航后重置过滤/搜索（触发 OnFilterTextChanged 刷新列表）
         CurrentPathChanged?.Invoke(value);
+    }
+
+    partial void OnFilterTextChanged(string value)
+    {
+        if (SearchSubdirectories)
+            _ = RunSearchAsync();
+        else
+            LoadEntries();
+    }
+
+    partial void OnSearchSubdirectoriesChanged(bool value)
+    {
+        if (SearchSubdirectories && FilterText.Trim().Length > 0)
+            _ = RunSearchAsync();
+        else if (!SearchSubdirectories)
+            LoadEntries();
+    }
+
+    /// <summary>子目录搜索：后台递归枚举，命中结果分批回 UI 线程增量追加。</summary>
+    private async Task RunSearchAsync()
+    {
+        _searchCts?.Cancel();
+        var cts = _searchCts = new CancellationTokenSource();
+        var generation = ++_searchGeneration;
+
+        var root = CurrentPath;
+        var pattern = FilterText.Trim();
+        if (root is null || pattern.Length == 0)
+            return;
+
+        Entries.Clear();
+        StatusText = $"正在搜索“{pattern}”…";
+        var dispatcher = System.Windows.Application.Current.Dispatcher;
+        var batch = new List<FsEntry>();
+
+        try
+        {
+            await foreach (var path in _search.SearchAsync(root, pattern, cts.Token))
+            {
+                var isDirectory = Directory.Exists(path);
+                batch.Add(new FsEntry
+                {
+                    Name = Path.GetFileName(path),
+                    FullPath = path,
+                    IsDirectory = isDirectory,
+                    SizeBytes = isDirectory ? null : new FileInfo(path).Length,
+                    ModifiedTime = isDirectory
+                        ? Directory.GetLastWriteTime(path)
+                        : File.GetLastWriteTime(path),
+                });
+
+                if (batch.Count < 100)
+                    continue;
+                var chunk = batch;
+                batch = new List<FsEntry>();
+                dispatcher.BeginInvoke(() => AppendSearchResults(generation, chunk));
+            }
+
+            if (batch.Count > 0)
+            {
+                var chunk = batch;
+                dispatcher.BeginInvoke(() => AppendSearchResults(generation, chunk));
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // 被新搜索/导航取代，静默结束
+        }
+        catch (Exception ex)
+        {
+            if (generation == _searchGeneration)
+                StatusText = $"搜索失败：{ex.Message}";
+        }
+    }
+
+    private void AppendSearchResults(int generation, List<FsEntry> chunk)
+    {
+        if (generation != _searchGeneration)
+            return;
+        foreach (var entry in chunk)
+            Entries.Add(entry);
+        StatusText = $"正在搜索… 已找到 {Entries.Count} 个项目";
     }
 
     /// <summary>首次加载：定位到 initialPath，不写入导航历史。只生效一次。</summary>
@@ -490,16 +589,19 @@ public partial class PaneViewModel : ObservableObject
         LoadEntries();
     }
 
-    /// <summary>关闭标签页时释放资源：停止刷新定时器与目录监视。</summary>
+    /// <summary>关闭标签页时释放资源：停止刷新定时器与目录监视，取消进行中的搜索。</summary>
     public void Shutdown()
     {
         _refreshTimer.Stop();
+        _searchCts?.Cancel();
         _watcher?.Dispose();
         _watcher = null;
     }
 
     private void LoadEntries()
     {
+        _searchGeneration++;
+        _searchCts?.Cancel();
         Entries.Clear();
         var path = CurrentPath;
         try
@@ -535,13 +637,15 @@ public partial class PaneViewModel : ObservableObject
                             SizeBytes = isDirectory ? null : ((FileInfo)item).Length,
                             ModifiedTime = item.LastWriteTime,
                         };
-                    });
+                    })
+                    .Where(entry => FilterText.Length == 0
+                        || entry.Name.Contains(FilterText, StringComparison.CurrentCultureIgnoreCase));
 
                 foreach (var entry in OrderEntries(entries))
                     Entries.Add(entry);
             }
 
-            StatusText = $"{Entries.Count} 个项目";
+            StatusText = $"{Entries.Count} 个项目" + (FilterText.Length > 0 ? "（已过滤）" : string.Empty);
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or DirectoryNotFoundException or IOException)
         {

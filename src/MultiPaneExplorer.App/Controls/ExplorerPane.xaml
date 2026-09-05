@@ -18,7 +18,7 @@
                         Margin="0,0,4,0" FontFamily="Segoe MDL2 Assets" Content="&#xE72A;"/>
                 <Button Command="{Binding UpCommand}" ToolTip="向上" Width="30" Height="24"
                         Margin="0,0,4,0" FontFamily="Segoe MDL2 Assets" Content="&#xE74A;"/>
-                <TextBox x:Name="AddressBox" Width="320" VerticalContentAlignment="Center"
+                <TextBox x:Name="AddressBox" Width="280" VerticalContentAlignment="Center"
                          ToolTip="输入路径后按回车跳转"
                          Text="{Binding PathText, UpdateSourceTrigger=PropertyChanged}"
                          KeyDown="AddressBox_KeyDown"/>
@@ -26,6 +26,14 @@
                         Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE72C;"/>
                 <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="30" Height="24"
                         Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE8F4;"/>
+                <TextBox x:Name="FilterBox" Width="130" VerticalContentAlignment="Center"
+                         Margin="8,0,0,0"
+                         ToolTip="过滤当前列表；勾选右侧则在全部子目录中搜索 (Ctrl+F 聚焦，Esc 清除)"
+                         Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
+                         KeyDown="FilterBox_KeyDown"/>
+                <CheckBox Content="子目录" IsChecked="{Binding SearchSubdirectories, Mode=TwoWay}"
+                          Margin="4,0,0,0" VerticalContentAlignment="Center"
+                          ToolTip="勾选后在当前目录及全部子目录中搜索"/>
             </StackPanel>
         </Border>
 

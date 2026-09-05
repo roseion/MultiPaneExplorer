@@ -227,6 +227,15 @@ public partial class ExplorerPane : UserControl
         e.Handled = true;
     }
 
+    private void FilterBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not Key.Escape)
+            return;
+        Vm.FilterText = "";
+        EntryList.Focus();
+        e.Handled = true;
+    }
+
     private void EntryList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
         Vm.SetSelection(EntryList.SelectedItems.Cast<FsEntry>().Select(item => item.FullPath));
 
@@ -316,6 +325,10 @@ public partial class ExplorerPane : UserControl
                 break;
             case Key.W:
                 CloseTab(_activeTabIndex);
+                e.Handled = true;
+                break;
+            case Key.F:
+                FilterBox.Focus();
                 e.Handled = true;
                 break;
         }
