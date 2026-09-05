@@ -86,6 +86,16 @@ public partial class ExplorerPane : UserControl
                 OnCurrentPathChanged(path);
             RefreshTabStrip();
         };
+        tab.PropertyChanged += (_, e) =>
+        {
+            if (ReferenceEquals(tab, Vm) && e.PropertyName == nameof(PaneViewModel.ViewMode))
+                QueueThumbnailsForCurrentEntries();
+        };
+        tab.Entries.CollectionChanged += (_, e) =>
+        {
+            if (ReferenceEquals(tab, Vm) && tab.ViewMode != "Details" && e.NewItems is not null)
+                ThumbnailLoader.EnqueueRange(e.NewItems.Cast<FsEntry>());
+        };
         return tab;
     }
 
@@ -125,7 +135,15 @@ public partial class ExplorerPane : UserControl
             _revealing = false;
         }
         RefreshTabStrip();
+        QueueThumbnailsForCurrentEntries();
         EntryList.Focus();
+    }
+
+    /// <summary>非详细信息视图下，为当前列表条目补齐大图标/缩略图。</summary>
+    private void QueueThumbnailsForCurrentEntries()
+    {
+        if (Vm.ViewMode != "Details")
+            ThumbnailLoader.EnqueueRange(Vm.Entries);
     }
 
     private static string TitleOf(PaneViewModel tab)
@@ -194,7 +212,7 @@ public partial class ExplorerPane : UserControl
     {
         ShowTree = Vm.ShowTree,
         ActiveTabIndex = _activeTabIndex,
-        Tabs = _tabs.Select(tab => new FileOps.Core.PaneTabState { Path = tab.CurrentPath }).ToList(),
+        Tabs = _tabs.Select(tab => new FileOps.Core.PaneTabState { Path = tab.CurrentPath, ViewMode = tab.ViewMode }).ToList(),
     };
 
     /// <summary>按会话状态恢复标签页（布局与全局设置由主窗口负责）。</summary>
@@ -208,6 +226,7 @@ public partial class ExplorerPane : UserControl
         {
             var tab = CreateTab();
             tab.ShowTree = state.ShowTree;
+            tab.ViewMode = string.IsNullOrEmpty(tabState.ViewMode) ? "Details" : tabState.ViewMode!;
             tab.Initialize(tabState.Path);
             _tabs.Add(tab);
         }

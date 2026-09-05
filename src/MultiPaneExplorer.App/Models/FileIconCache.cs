@@ -20,24 +20,34 @@ public static class FileIconCache
 
     private static readonly ShellIconService Icons = new();
     private static readonly ConcurrentDictionary<string, ImageSource?> Cache = new();
+    private static readonly ConcurrentDictionary<string, ImageSource?> LargeCache = new();
 
     public static ImageSource? Get(FsEntry entry)
     {
         var key = entry.IsDirectory
             ? DirectoryKey
             : NormalizeKey(Path.GetExtension(entry.Name));
-        return Cache.GetOrAdd(key, _ => Load(entry.IsDirectory, key));
+        return Cache.GetOrAdd(key, _ => Load(entry.IsDirectory, key, small: true));
+    }
+
+    /// <summary>32×32 大图标（大图标视图的非图片文件回退用，不放大）。</summary>
+    public static ImageSource? GetLarge(FsEntry entry)
+    {
+        var key = entry.IsDirectory
+            ? DirectoryKey
+            : NormalizeKey(Path.GetExtension(entry.Name));
+        return LargeCache.GetOrAdd(key, _ => Load(entry.IsDirectory, key, small: false));
     }
 
     private static string NormalizeKey(string extension) =>
         string.IsNullOrEmpty(extension) ? NoExtensionKey : extension.ToLowerInvariant();
 
-    private static ImageSource? Load(bool isDirectory, string cacheKey)
+    private static ImageSource? Load(bool isDirectory, string cacheKey, bool small)
     {
         try
         {
             var name = isDirectory ? "文件夹" : cacheKey == NoExtensionKey ? "file.unknown" : "file" + cacheKey;
-            var hIcon = Icons.GetSmallIcon(name, isDirectory);
+            var hIcon = small ? Icons.GetSmallIcon(name, isDirectory) : Icons.GetLargeIcon(name, isDirectory);
             if (hIcon == IntPtr.Zero)
                 return null;
 

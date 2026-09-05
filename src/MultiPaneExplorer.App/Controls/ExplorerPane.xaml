@@ -9,6 +9,27 @@
         <DataTemplate x:Key="IconTemplate">
             <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,1"/>
         </DataTemplate>
+        <DataTemplate x:Key="LargeIconTemplate">
+            <StackPanel Width="100" Margin="6,4" HorizontalAlignment="Center">
+                <Image Source="{Binding LargeIcon}" Width="64" Height="64" Stretch="Uniform"
+                       HorizontalAlignment="Center" Margin="2"/>
+                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxHeight="32"
+                           TextAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Center" ToolTip="{Binding Name}"/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="ListTemplate">
+            <StackPanel Orientation="Horizontal" Margin="4,1">
+                <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,1,6,1" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="LargeIconsPanel">
+            <WrapPanel Orientation="Horizontal" ItemWidth="112"/>
+        </ItemsPanelTemplate>
+        <ItemsPanelTemplate x:Key="ListPanel">
+            <VirtualizingStackPanel Orientation="Vertical"/>
+        </ItemsPanelTemplate>
     </UserControl.Resources>
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="{StaticResource W11.WindowBackground}" Padding="4"
@@ -35,6 +56,13 @@
                         Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE8F4;"/>
                 <Button Command="{Binding OpenRecycleBinCommand}" ToolTip="打开回收站" Width="30" Height="24"
                         Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Content="&#xE74D;"/>
+                <ComboBox x:Name="ViewModeBox" Width="76" Height="24" Margin="8,0,0,0"
+                          SelectedValue="{Binding ViewMode}" SelectedValuePath="Tag"
+                          ToolTip="视图模式">
+                    <ComboBoxItem Content="详细信息" Tag="Details"/>
+                    <ComboBoxItem Content="大图标" Tag="LargeIcons"/>
+                    <ComboBoxItem Content="列表" Tag="List"/>
+                </ComboBox>
                 <TextBox x:Name="FilterBox" Width="130" VerticalContentAlignment="Center"
                          Margin="8,0,0,0"
                          ToolTip="过滤当前列表；勾选右侧则在全部子目录中搜索 (Ctrl+F 聚焦，Esc 清除)"
@@ -105,18 +133,34 @@
             </TreeView>
 
             <Border x:Name="DropZone" Grid.Column="1" BorderThickness="2" BorderBrush="Transparent">
-                <ListView x:Name="EntryList"
-                          ItemsSource="{Binding Entries}"
-                          SelectionMode="Extended"
-                          SelectionChanged="EntryList_SelectionChanged"
-                          KeyDown="EntryList_KeyDown"
-                          AllowDrop="True"
-                          DragOver="EntryList_DragOver"
-                          DragLeave="EntryList_DragLeave"
-                          Drop="EntryList_Drop"
-                          PreviewMouseLeftButtonDown="EntryList_PreviewMouseLeftButtonDown"
-                          PreviewMouseMove="EntryList_PreviewMouseMove"
-                          GridViewColumnHeader.Click="ColumnHeader_Click">
+            <ListView x:Name="EntryList"
+                      ItemsSource="{Binding Entries}"
+                      SelectionMode="Extended"
+                      SelectionChanged="EntryList_SelectionChanged"
+                      KeyDown="EntryList_KeyDown"
+                      AllowDrop="True"
+                      DragOver="EntryList_DragOver"
+                      DragLeave="EntryList_DragLeave"
+                      Drop="EntryList_Drop"
+                      PreviewMouseLeftButtonDown="EntryList_PreviewMouseLeftButtonDown"
+                      PreviewMouseMove="EntryList_PreviewMouseMove"
+                      GridViewColumnHeader.Click="ColumnHeader_Click">
+                <ListView.Style>
+                    <Style TargetType="ListView">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ViewMode}" Value="LargeIcons">
+                                <Setter Property="View" Value="{x:Null}"/>
+                                <Setter Property="ItemTemplate" Value="{StaticResource LargeIconTemplate}"/>
+                                <Setter Property="ItemsPanel" Value="{StaticResource LargeIconsPanel}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ViewMode}" Value="List">
+                                <Setter Property="View" Value="{x:Null}"/>
+                                <Setter Property="ItemTemplate" Value="{StaticResource ListTemplate}"/>
+                                <Setter Property="ItemsPanel" Value="{StaticResource ListPanel}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.Style>
                 <ListView.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="复制"
@@ -200,6 +244,53 @@
                             </Setter.Value>
                         </Setter>
                         <EventSetter Event="MouseDoubleClick" Handler="Item_DoubleClick"/>
+                        <Style.Triggers>
+                            <!-- 大图标/列表模式：改用 ContentPresenter 呈现条目模板（GridViewRowPresenter 仅适用详细信息视图） -->
+                            <DataTrigger Binding="{Binding DataContext.ViewMode, RelativeSource={RelativeSource AncestorType=ListView}}" Value="LargeIcons">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                    CornerRadius="4" SnapsToDevicePixels="True">
+                                                <ContentPresenter Content="{TemplateBinding Content}"
+                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                  HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding DataContext.ViewMode, RelativeSource={RelativeSource AncestorType=ListView}}" Value="List">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                    CornerRadius="4" SnapsToDevicePixels="True">
+                                                <ContentPresenter Content="{TemplateBinding Content}"
+                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                  HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
                     </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.View>

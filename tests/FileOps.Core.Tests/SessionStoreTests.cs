@@ -64,6 +64,28 @@ public sealed class SessionStoreTests : IDisposable
         Assert.Null(SessionStore.TryLoad(_filePath));
     }
 
+    /// <summary>每个标签页的视图模式（详细信息/大图标/列表）随会话持久化。</summary>
+    [Fact]
+    public void Save_TryLoad_PreservesPerTabViewMode()
+    {
+        var original = new SessionState
+        {
+            Panes =
+            [
+                new PaneState
+                {
+                    Tabs = [new PaneTabState { Path = "C:\\x", ViewMode = "LargeIcons" }],
+                },
+            ],
+        };
+
+        SessionStore.Save(original, _filePath);
+        var restored = SessionStore.TryLoad(_filePath);
+
+        Assert.NotNull(restored);
+        Assert.Equal("LargeIcons", restored.Panes[0].Tabs[0].ViewMode);
+    }
+
     /// <summary>非法转义等损坏的会话文件应按"无会话"处理，而不是让应用崩溃。</summary>
     [Fact]
     public void TryLoad_CorruptedJson_ReturnsNull()

@@ -7,6 +7,9 @@ namespace FileOps.Core;
 public sealed class PaneTabState
 {
     public string? Path { get; set; }
+
+    /// <summary>视图模式：Details / LargeIcons / List。</summary>
+    public string? ViewMode { get; set; }
 }
 
 /// <summary>一个窗格的会话状态。</summary>

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace FileOps.Core;
 
 /// <summary>
-/// 按扩展名/目录属性提取 Shell 文件图标句柄（HICON，16×16 小图标）。
+/// 按扩展名/目录属性提取 Shell 文件图标句柄（HICON，16×16 小图标或 32×32 大图标）。
 /// 使用 SHGFI_USEFILEATTRIBUTES：只看扩展名与属性，不实际读取文件本身。
 /// 调用方负责用 DestroyIcon 释放返回的句柄（建议上层按扩展名缓存）。
 /// </summary>
@@ -11,12 +11,20 @@ public sealed class ShellIconService
 {
     private const uint SHGFI_ICON = 0x000000100;
     private const uint SHGFI_SMALLICON = 0x000000001;
+    private const uint SHGFI_LARGEICON = 0x000000000;
     private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
     private const uint FILE_ATTRIBUTE_DIRECTORY = 0x00000010;
     private const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
 
-    /// <summary>提取小图标句柄；失败返回 IntPtr.Zero。</summary>
-    public IntPtr GetSmallIcon(string pathOrExtension, bool isDirectory)
+    /// <summary>提取小图标（16×16）句柄；失败返回 IntPtr.Zero。</summary>
+    public IntPtr GetSmallIcon(string pathOrExtension, bool isDirectory) =>
+        GetIcon(pathOrExtension, isDirectory, SHGFI_SMALLICON);
+
+    /// <summary>提取大图标（32×32）句柄；失败返回 IntPtr.Zero。</summary>
+    public IntPtr GetLargeIcon(string pathOrExtension, bool isDirectory) =>
+        GetIcon(pathOrExtension, isDirectory, SHGFI_LARGEICON);
+
+    private IntPtr GetIcon(string pathOrExtension, bool isDirectory, uint sizeFlag)
     {
         var name = isDirectory ? "文件夹" : EnsureExtension(pathOrExtension);
         var attributes = isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
@@ -25,7 +33,7 @@ public sealed class ShellIconService
         var result = SHGetFileInfo(
             name, attributes, ref info,
             (uint)Marshal.SizeOf<SHFILEINFO>(),
-            SHGFI_ICON | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES);
+            SHGFI_ICON | sizeFlag | SHGFI_USEFILEATTRIBUTES);
 
         return result != 0 ? info.hIcon : IntPtr.Zero;
     }

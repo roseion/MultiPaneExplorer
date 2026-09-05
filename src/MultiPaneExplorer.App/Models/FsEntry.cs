@@ -3,8 +3,8 @@ using System.Windows.Media;
 
 namespace MultiPaneExplorer.App.Models;
 
-/// <summary>文件列表中的一个条目（文件夹 / 文件 / 驱动器）。</summary>
-public sealed class FsEntry
+/// <summary>文件列表中的一个条目（文件夹 / 文件 / 驱动器 / 回收站项）。</summary>
+public sealed class FsEntry : System.ComponentModel.INotifyPropertyChanged
 {
     public required string Name { get; init; }
     public required string FullPath { get; init; }
@@ -17,6 +17,23 @@ public sealed class FsEntry
 
     /// <summary>类型图标（按扩展名缓存，冻结可跨线程）。</summary>
     public ImageSource? Icon => FileIconCache.Get(this);
+
+    private ImageSource? _largeIcon;
+
+    /// <summary>大图标视图用的 96px 缩略图/32px 图标，由 ThumbnailLoader 异步回填。</summary>
+    public ImageSource? LargeIcon
+    {
+        get => _largeIcon;
+        set
+        {
+            if (ReferenceEquals(_largeIcon, value))
+                return;
+            _largeIcon = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(LargeIcon)));
+        }
+    }
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
     public string Type =>
         IsDirectory ? "文件夹"

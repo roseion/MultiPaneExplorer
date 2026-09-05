@@ -84,6 +84,10 @@ public partial class PaneViewModel : ObservableObject
     [ObservableProperty]
     private bool _isRecycleBinView;
 
+    /// <summary>视图模式：Details / LargeIcons / List（随会话按标签页持久化）。</summary>
+    [ObservableProperty]
+    private string _viewMode = "Details";
+
     /// <summary>文件树根节点（驱动器）。</summary>
     public ObservableCollection<FsTreeNode> TreeRoots { get; } = new();
 
