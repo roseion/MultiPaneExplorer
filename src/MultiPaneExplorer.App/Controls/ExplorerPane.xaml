@@ -99,12 +99,22 @@
                         <MenuItem Header="复制"
                                   InputGestureText="Ctrl+C"
                                   Command="{Binding PlacementTarget.DataContext.CopyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="剪切"
+                                  InputGestureText="Ctrl+X"
+                                  Command="{Binding PlacementTarget.DataContext.CutCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         <MenuItem Header="粘贴"
                                   InputGestureText="Ctrl+V"
                                   Command="{Binding PlacementTarget.DataContext.PasteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="复制文件路径"
+                                  InputGestureText="Ctrl+Shift+C"
+                                  Command="{Binding PlacementTarget.DataContext.CopyPathCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         <Separator/>
-                        <MenuItem Header="新建文件夹"
-                                  Command="{Binding PlacementTarget.DataContext.NewFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="新建">
+                            <MenuItem Header="文件夹"
+                                      Command="{Binding PlacementTarget.DataContext.NewFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                            <MenuItem Header="文本文档"
+                                      Command="{Binding PlacementTarget.DataContext.NewTextFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        </MenuItem>
                         <Separator/>
                         <MenuItem Header="重命名…"
                                   InputGestureText="F2"

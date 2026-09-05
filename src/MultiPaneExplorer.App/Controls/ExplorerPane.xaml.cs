@@ -288,7 +288,7 @@ public partial class ExplorerPane : UserControl
     }
 
     private void EntryList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
-        Vm.SetSelection(EntryList.SelectedItems.Cast<FsEntry>().Select(item => item.FullPath));
+        Vm.SetSelection(EntryList.SelectedItems.Cast<FsEntry>().ToList());
 
     private void Item_DoubleClick(object sender, MouseButtonEventArgs e) =>
         Vm.OpenEntryCommand.Execute((sender as ListViewItem)?.Content);
@@ -330,6 +330,13 @@ public partial class ExplorerPane : UserControl
 
     private void EntryList_KeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key is Key.A && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            EntryList.SelectAll();
+            e.Handled = true;
+            return;
+        }
+
         switch (e.Key)
         {
             case Key.Enter:
@@ -357,6 +364,14 @@ public partial class ExplorerPane : UserControl
 
     private void Pane_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Ctrl+Shift+C：复制文件路径
+        if (e.Key is Key.C && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+        {
+            Vm.CopyPathCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         if (Keyboard.Modifiers != ModifierKeys.Control)
             return;
 
@@ -364,6 +379,10 @@ public partial class ExplorerPane : UserControl
         {
             case Key.C:
                 Vm.CopyCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.X:
+                Vm.CutCommand.Execute(null);
                 e.Handled = true;
                 break;
             case Key.V:

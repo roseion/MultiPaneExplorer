@@ -189,7 +189,17 @@ public partial class PaneViewModel : ObservableObject
         LoadEntries();
     }
 
-    public void SetSelection(IEnumerable<string> paths) => SelectedPaths = paths.ToList();
+    public void SetSelection(IEnumerable<FsEntry> entries)
+    {
+        var items = entries.ToList();
+        SelectedPaths = items.Select(item => item.FullPath).ToList();
+
+        if (items.Count == 0)
+            return; // 取消选中时保留原状态文本
+
+        var bytes = items.Where(item => !item.IsDirectory).Sum(item => item.SizeBytes ?? 0);
+        StatusText = $"已选中 {items.Count} 个项目（{FsEntry.FormatSize(bytes)}）";
+    }
 
     public void NavigateTo(string? path)
     {
@@ -397,21 +407,47 @@ public partial class PaneViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Copy()
+    private void Copy() => SetClipboardFiles(ClipboardDropEffect.Copy, "已复制 {0} 个项目");
+
+    /// <summary>剪切：与资源管理器一致写入 Preferred DropEffect=Move，粘贴时按移动处理。</summary>
+    [RelayCommand]
+    private void Cut() => SetClipboardFiles(ClipboardDropEffect.Move, "已剪切 {0} 个项目");
+
+    [RelayCommand]
+    private void CopyPath()
     {
         if (SelectedPaths.Count == 0)
             return;
 
         try
         {
-            var dropList = new System.Collections.Specialized.StringCollection();
-            dropList.AddRange(SelectedPaths.ToArray());
-            System.Windows.Clipboard.SetFileDropList(dropList);
-            StatusText = $"已复制 {SelectedPaths.Count} 个项目";
+            System.Windows.Clipboard.SetText(string.Join(Environment.NewLine, SelectedPaths));
+            StatusText = $"已复制 {SelectedPaths.Count} 个路径";
         }
         catch (Exception ex)
         {
-            StatusText = $"复制失败：{ex.Message}";
+            StatusText = $"复制路径失败：{ex.Message}";
+        }
+    }
+
+    private void SetClipboardFiles(ClipboardDropEffect effect, string successFormat)
+    {
+        if (SelectedPaths.Count == 0)
+            return;
+
+        try
+        {
+            var data = new System.Windows.DataObject();
+            var dropList = new System.Collections.Specialized.StringCollection();
+            dropList.AddRange(SelectedPaths.ToArray());
+            data.SetFileDropList(dropList);
+            data.SetData(DropEffectCodec.ClipboardFormat, new MemoryStream(DropEffectCodec.Encode(effect)));
+            System.Windows.Clipboard.SetDataObject(data, copy: true);
+            StatusText = string.Format(successFormat, SelectedPaths.Count);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"写入剪贴板失败：{ex.Message}";
         }
     }
 
@@ -419,10 +455,21 @@ public partial class PaneViewModel : ObservableObject
     private async Task PasteAsync()
     {
         var sources = new List<string>();
+        var clipboardEffect = ClipboardDropEffect.None;
         try
         {
             if (System.Windows.Clipboard.ContainsFileDropList())
+            {
                 sources.AddRange(System.Windows.Clipboard.GetFileDropList().Cast<string>());
+
+                // 读取 Preferred DropEffect：Explorer 剪切的文件在我们这粘贴 = 移动
+                if (System.Windows.Clipboard.GetDataObject() is System.Windows.IDataObject data &&
+                    data.GetDataPresent(DropEffectCodec.ClipboardFormat) &&
+                    data.GetData(DropEffectCodec.ClipboardFormat) is MemoryStream stream)
+                {
+                    clipboardEffect = DropEffectCodec.Decode(stream.ToArray());
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -436,7 +483,7 @@ public partial class PaneViewModel : ObservableObject
             return;
         }
 
-        await PastePathsAsync(sources);
+        await PastePathsAsync(sources, move: clipboardEffect == ClipboardDropEffect.Move);
     }
 
     /// <summary>把指定路径列表转移到当前目录（move=false 复制 / true 移动）；剪贴板粘贴与拖拽放置共用。
@@ -501,6 +548,19 @@ public partial class PaneViewModel : ObservableObject
         finally
         {
             _isBusy = false;
+        }
+
+        if (move)
+        {
+            // 移动式粘贴完成后清空剪贴板中的剪切项（与资源管理器行为一致）
+            try
+            {
+                System.Windows.Clipboard.Clear();
+            }
+            catch
+            {
+                // 剪贴板被其他进程占用时忽略
+            }
         }
         LoadEntries();
     }
@@ -585,6 +645,27 @@ public partial class PaneViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusText = $"新建文件夹失败：{ex.Message}";
+        }
+        LoadEntries();
+    }
+
+    [RelayCommand]
+    private async Task NewTextFileAsync()
+    {
+        if (CurrentPath is null)
+        {
+            StatusText = "“此电脑”下不能新建文件，请先进入某个目录";
+            return;
+        }
+
+        try
+        {
+            var created = await Task.Run(() => _fileOps.CreateTextFileAsync(CurrentPath));
+            StatusText = $"已新建文本文档：{Path.GetFileName(created)}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"新建文本文档失败：{ex.Message}";
         }
         LoadEntries();
     }
