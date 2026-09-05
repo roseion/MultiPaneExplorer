@@ -58,17 +58,19 @@
                 </TreeView.ItemTemplate>
             </TreeView>
 
-            <ListView x:Name="EntryList" Grid.Column="1"
-                      ItemsSource="{Binding Entries}"
-                      SelectionMode="Extended"
-                      SelectionChanged="EntryList_SelectionChanged"
-                      KeyDown="EntryList_KeyDown"
-                      AllowDrop="True"
-                      DragOver="EntryList_DragOver"
-                      Drop="EntryList_Drop"
-                      PreviewMouseLeftButtonDown="EntryList_PreviewMouseLeftButtonDown"
-                      PreviewMouseMove="EntryList_PreviewMouseMove"
-                      GridViewColumnHeader.Click="ColumnHeader_Click">
+            <Border x:Name="DropZone" Grid.Column="1" BorderThickness="2" BorderBrush="Transparent">
+                <ListView x:Name="EntryList"
+                          ItemsSource="{Binding Entries}"
+                          SelectionMode="Extended"
+                          SelectionChanged="EntryList_SelectionChanged"
+                          KeyDown="EntryList_KeyDown"
+                          AllowDrop="True"
+                          DragOver="EntryList_DragOver"
+                          DragLeave="EntryList_DragLeave"
+                          Drop="EntryList_Drop"
+                          PreviewMouseLeftButtonDown="EntryList_PreviewMouseLeftButtonDown"
+                          PreviewMouseMove="EntryList_PreviewMouseMove"
+                          GridViewColumnHeader.Click="ColumnHeader_Click">
                 <ListView.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="复制"
@@ -107,7 +109,8 @@
                         <GridViewColumn x:Name="SizeColumn" Header="大小" Width="90" DisplayMemberBinding="{Binding Size}"/>
                     </GridView>
                 </ListView.View>
-            </ListView>
+                </ListView>
+            </Border>
         </Grid>
     </DockPanel>
 </UserControl>

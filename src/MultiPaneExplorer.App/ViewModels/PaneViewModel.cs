@@ -340,9 +340,9 @@ public partial class PaneViewModel : ObservableObject
         await PastePathsAsync(sources);
     }
 
-    /// <summary>把指定路径列表粘贴（复制）到当前目录；剪贴板粘贴与拖拽放置共用。
-    /// 复制在后台线程执行，进度实时更新状态栏，同名冲突弹出对话框询问。</summary>
-    public async Task PastePathsAsync(IReadOnlyList<string> sources)
+    /// <summary>把指定路径列表转移到当前目录（move=false 复制 / true 移动）；剪贴板粘贴与拖拽放置共用。
+    /// 传输在后台线程执行，进度实时更新状态栏，同名冲突弹出对话框询问。</summary>
+    public async Task PastePathsAsync(IReadOnlyList<string> sources, bool move = false)
     {
         if (CurrentPath is null)
         {
@@ -351,14 +351,15 @@ public partial class PaneViewModel : ObservableObject
         }
 
         var target = CurrentPath;
+        var verb = move ? "移动" : "粘贴";
         var cts = new CancellationTokenSource();
         ConflictDecision? remembered = null;
         var options = new CopyOptions
         {
             Progress = new Progress<CopyProgress>(p => StatusText =
                 p.TotalBytes > 0 && p.DoneBytes >= p.TotalBytes
-                    ? "粘贴完成，正在刷新列表…"
-                    : $"正在粘贴… {FsEntry.FormatSize(p.DoneBytes)} / {FsEntry.FormatSize(p.TotalBytes)}（{p.Percent}%）"),
+                    ? $"{verb}完成，正在刷新列表…"
+                    : $"正在{verb}… {FsEntry.FormatSize(p.DoneBytes)} / {FsEntry.FormatSize(p.TotalBytes)}（{p.Percent}%）"),
             OnConflict = context =>
             {
                 if (remembered.HasValue)
@@ -378,23 +379,25 @@ public partial class PaneViewModel : ObservableObject
         };
 
         _isBusy = true;
-        StatusText = $"正在粘贴 {sources.Count} 个项目…";
+        StatusText = $"正在{verb} {sources.Count} 个项目…";
         try
         {
-            var result = await Task.Run(() => _fileOps.CopyIntoAsync(sources, target, options, cts.Token));
+            var result = await Task.Run(() => move
+                ? _fileOps.MoveIntoAsync(sources, target, options, cts.Token)
+                : _fileOps.CopyIntoAsync(sources, target, options, cts.Token));
             StatusText = result.HasErrors
-                ? $"粘贴完成：{result.CopiedCount} 个成功，{result.SkippedCount} 个跳过，{result.Errors.Count} 个失败"
+                ? $"{verb}完成：{result.CopiedCount} 个成功，{result.SkippedCount} 个跳过，{result.Errors.Count} 个失败"
                 : result.SkippedCount > 0
-                    ? $"已粘贴 {result.CopiedCount} 个项目，跳过 {result.SkippedCount} 个"
-                    : $"已粘贴 {result.CopiedCount} 个项目";
+                    ? $"已{verb} {result.CopiedCount} 个项目，跳过 {result.SkippedCount} 个"
+                    : $"已{verb} {result.CopiedCount} 个项目";
         }
         catch (OperationCanceledException)
         {
-            StatusText = "粘贴已取消";
+            StatusText = $"{verb}已取消";
         }
         catch (Exception ex)
         {
-            StatusText = $"粘贴失败：{ex.Message}";
+            StatusText = $"{verb}失败：{ex.Message}";
         }
         finally
         {

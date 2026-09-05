@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using MultiPaneExplorer.App.Models;
 using MultiPaneExplorer.App.ViewModels;
 
@@ -191,7 +192,9 @@ public partial class ExplorerPane : UserControl
         }
     }
 
-    // ---- 跨窗格拖拽复制（基础版：拖动即复制） ----
+    // ---- 跨窗格拖拽：默认同盘移动、Ctrl=复制、Shift=移动、跨盘=复制 ----
+
+    private static readonly Brush DropHintBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD7));
 
     private void EntryList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -220,19 +223,49 @@ public partial class ExplorerPane : UserControl
         var dropList = new System.Collections.Specialized.StringCollection();
         dropList.AddRange(paths);
         data.SetFileDropList(dropList);
-        _ = DragDrop.DoDragDrop(EntryList, data, DragDropEffects.Copy);
+
+        // 允许复制和移动：拖出到资源管理器/桌面时由目标决定；应用内由 DragOver 计算
+        var result = DragDrop.DoDragDrop(EntryList, data, DragDropEffects.Copy | DragDropEffects.Move);
+        if (result != DragDropEffects.None)
+            Vm.RefreshCommand.Execute(null); // 拖出（可能被移动）或原地拖放都可能改变源目录内容
     }
 
     private void EntryList_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop) || Vm.CurrentPath is null)
+        {
+            e.Effects = DragDropEffects.None;
+            DropZone.BorderBrush = Brushes.IndianRed;
+            e.Handled = true;
+            return;
+        }
+
+        e.Effects = DecideDropEffect(e);
+        DropZone.BorderBrush = DropHintBrush;
         e.Handled = true;
     }
 
+    private DragDropEffects DecideDropEffect(DragEventArgs e)
+    {
+        if (e.KeyStates.HasFlag(DragDropKeyStates.ControlKey))
+            return DragDropEffects.Copy;
+        if (e.KeyStates.HasFlag(DragDropKeyStates.ShiftKey))
+            return DragDropEffects.Move;
+
+        var paths = e.Data.GetData(DataFormats.FileDrop) as string[] ?? [];
+        var sameVolume = paths.Length > 0 && paths.All(
+            path => FileOps.Core.TransferHelper.IsSameVolume(path, Vm.CurrentPath!));
+        return sameVolume ? DragDropEffects.Move : DragDropEffects.Copy;
+    }
+
+    private void EntryList_DragLeave(object sender, DragEventArgs e) =>
+        DropZone.BorderBrush = Brushes.Transparent;
+
     private void EntryList_Drop(object sender, DragEventArgs e)
     {
+        DropZone.BorderBrush = Brushes.Transparent;
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } paths)
-            _ = Vm.PastePathsAsync(paths);
+            _ = Vm.PastePathsAsync(paths, move: e.Effects.HasFlag(DragDropEffects.Move));
         e.Handled = true;
     }
 }
