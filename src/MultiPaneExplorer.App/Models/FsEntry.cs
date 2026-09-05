@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows.Media;
 
 namespace MultiPaneExplorer.App.Models;
 
@@ -10,6 +11,9 @@ public sealed class FsEntry
     public required bool IsDirectory { get; init; }
     public long? SizeBytes { get; init; }
     public DateTime ModifiedTime { get; init; }
+
+    /// <summary>类型图标（按扩展名缓存，冻结可跨线程）。</summary>
+    public ImageSource? Icon => FileIconCache.Get(this);
 
     public string Type =>
         IsDirectory ? "文件夹"

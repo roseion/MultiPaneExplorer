@@ -4,6 +4,9 @@
              PreviewKeyDown="Pane_PreviewKeyDown">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <DataTemplate x:Key="IconTemplate">
+            <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,1"/>
+        </DataTemplate>
     </UserControl.Resources>
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="#F3F3F3" Padding="4"
@@ -126,13 +129,14 @@
                 </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView x:Name="EntryView">
+                        <GridViewColumn x:Name="IconColumn" Header="" Width="26" CellTemplate="{StaticResource IconTemplate}"/>
                         <GridViewColumn x:Name="NameColumn" Header="名称" Width="280" DisplayMemberBinding="{Binding Name}"/>
                         <GridViewColumn x:Name="ModifiedColumn" Header="修改时间" Width="140" DisplayMemberBinding="{Binding Modified}"/>
                         <GridViewColumn x:Name="TypeColumn" Header="类型" Width="90" DisplayMemberBinding="{Binding Type}"/>
                         <GridViewColumn x:Name="SizeColumn" Header="大小" Width="90" DisplayMemberBinding="{Binding Size}"/>
                     </GridView>
                 </ListView.View>
-                </ListView>
+            </ListView>
             </Border>
         </Grid>
     </DockPanel>
