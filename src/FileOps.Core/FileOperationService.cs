@@ -53,7 +53,7 @@ public sealed class FileOperationService : IFileOperationService
         }
 
         state.ReportProgress(currentFile: string.Empty, final: true);
-        return new CopyResult(state.CopiedCount, state.SkippedCount, state.Errors);
+        return new CopyResult(state.CopiedCount, state.SkippedCount, state.Errors, state.Transferred, state.ReplacedAny);
     }
 
     /// <summary>测试用：强制走"复制后删除源"的慢路径（模拟跨卷移动）。</summary>
@@ -104,7 +104,7 @@ public sealed class FileOperationService : IFileOperationService
         }
 
         state.ReportProgress(currentFile: string.Empty, final: true);
-        return new CopyResult(state.CopiedCount, state.SkippedCount, state.Errors);
+        return new CopyResult(state.CopiedCount, state.SkippedCount, state.Errors, state.Transferred, state.ReplacedAny);
     }
 
     private async Task<bool> MoveItemAsync(
@@ -128,6 +128,8 @@ public sealed class FileOperationService : IFileOperationService
             }
 
             Directory.CreateDirectory(destination);
+            if (isRoot)
+                state.Transferred.Add(new TransferedItem(source, destination));
             foreach (var entry in Directory.EnumerateFileSystemEntries(source))
             {
                 state.CancellationToken.ThrowIfCancellationRequested();
@@ -171,6 +173,8 @@ public sealed class FileOperationService : IFileOperationService
             DeleteSourceQuietly(source, state, isDirectory: false);
         }
 
+        if (isRoot)
+            state.Transferred.Add(new TransferedItem(source, destFile));
         state.DoneBytes += size;
         state.ReportProgress(source);
         return true;
@@ -221,7 +225,7 @@ public sealed class FileOperationService : IFileOperationService
         CopyState state)
     {
         if (File.Exists(source))
-            return await CopyFileCoreAsync(source, targetParent, displayName, state).ConfigureAwait(false);
+            return await CopyFileCoreAsync(source, targetParent, displayName, isRoot, state).ConfigureAwait(false);
 
         if (!Directory.Exists(source))
         {
@@ -238,6 +242,8 @@ public sealed class FileOperationService : IFileOperationService
             return false;
 
         Directory.CreateDirectory(destination);
+        if (isRoot)
+            state.Transferred.Add(new TransferedItem(source, destination));
         foreach (var entry in Directory.EnumerateFileSystemEntries(source))
         {
             state.CancellationToken.ThrowIfCancellationRequested();
@@ -253,6 +259,7 @@ public sealed class FileOperationService : IFileOperationService
         string source,
         string targetParent,
         string displayName,
+        bool isRoot,
         CopyState state)
     {
         var destination = state.ResolveConflict(
@@ -268,6 +275,8 @@ public sealed class FileOperationService : IFileOperationService
         }
 
         await CopyFileContentAsync(source, destination, state).ConfigureAwait(false);
+        if (isRoot)
+            state.Transferred.Add(new TransferedItem(source, destination));
         return true;
     }
 
@@ -440,6 +449,12 @@ public sealed class FileOperationService : IFileOperationService
         public int ConflictIndex { get; set; }
         public List<string> Errors { get; } = new();
 
+        /// <summary>根级成功传输的（源 → 实际落点）明细，供撤销/重做使用。</summary>
+        public List<TransferedItem> Transferred { get; } = new();
+
+        /// <summary>是否发生过"替换"决策（覆盖文件或合并目录，此类结果不可撤销）。</summary>
+        public bool ReplacedAny { get; set; }
+
         /// <summary>决定冲突目标的去向；返回 null 表示跳过，Replaced 表示覆盖现有目标。</summary>
         public (string? Destination, bool Replaced) ResolveConflict(
             string destination, string source, bool sourceIsDirectory)
@@ -456,13 +471,19 @@ public sealed class FileOperationService : IFileOperationService
 
             return decision switch
             {
-                ConflictDecision.Replace => (destination, true),
+                ConflictDecision.Replace => ReplaceAndMark(destination),
                 ConflictDecision.Skip => (null, false),
                 _ => (GetAvailablePath(
                         Path.GetDirectoryName(destination) ?? string.Empty,
                         Path.GetFileName(destination)),
                     false),
             };
+
+            (string? Destination, bool Replaced) ReplaceAndMark(string target)
+            {
+                ReplacedAny = true;
+                return (target, true);
+            }
         }
 
         public void ReportProgress(string currentFile, bool final = false)
