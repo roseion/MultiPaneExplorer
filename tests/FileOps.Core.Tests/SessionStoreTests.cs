@@ -25,6 +25,7 @@ public sealed class SessionStoreTests : IDisposable
         {
             Layout = "Three",
             ShowHiddenFiles = true,
+            UiScale = 1.25,
             Panes =
             [
                 new PaneState
@@ -48,6 +49,7 @@ public sealed class SessionStoreTests : IDisposable
         Assert.NotNull(restored);
         Assert.Equal("Three", restored.Layout);
         Assert.True(restored.ShowHiddenFiles);
+        Assert.Equal(1.25, restored.UiScale);
         Assert.Equal(2, restored.Panes.Count);
         Assert.False(restored.Panes[0].ShowTree);
         Assert.Equal(1, restored.Panes[0].ActiveTabIndex);

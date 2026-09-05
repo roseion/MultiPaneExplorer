@@ -6,7 +6,7 @@
         Background="{StaticResource W11.WindowBackground}"
         WindowStartupLocation="CenterScreen"
         PreviewKeyDown="Window_PreviewKeyDown">
-    <DockPanel>
+    <DockPanel x:Name="RootPanel">
         <Border DockPanel.Dock="Top" Background="#F3F3F3" Padding="6,4"
                 BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal">

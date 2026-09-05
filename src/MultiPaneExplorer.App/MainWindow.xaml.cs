@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     private PaneLayout _layout = PaneLayout.Two;
     private int _visiblePaneCount = 2;
     private ExplorerPane? _lastFocusedPane;
+    private double _uiScale = 1.0;
 
     public MainWindow()
     {
@@ -96,6 +97,10 @@ public partial class MainWindow : Window
 
         HiddenFilesToggle.IsChecked = session.ShowHiddenFiles; // 在标签恢复后下发全局设置
 
+        if (session.UiScale > 0)
+            _uiScale = Math.Clamp(session.UiScale, 0.8, 2.0);
+        ApplyZoom();
+
         _lastFocusedPane = _panes[0];
     }
 
@@ -107,6 +112,7 @@ public partial class MainWindow : Window
             {
                 Layout = _layout.ToString(),
                 ShowHiddenFiles = HiddenFilesToggle.IsChecked == true,
+                UiScale = _uiScale,
                 Panes = _panes.Select(pane => pane.CaptureState()).ToList(),
             });
         }
@@ -212,9 +218,30 @@ public partial class MainWindow : Window
 
     private IReadOnlyList<ExplorerPane> VisiblePanes() => _panes.Take(_visiblePaneCount).ToList();
 
-    /// <summary>F6：键盘焦点在可见窗格之间循环切换；Ctrl+Z/Y：全局撤销/重做（文本框内保留原生编辑）。</summary>
+    /// <summary>F6：键盘焦点在可见窗格之间循环切换；Ctrl+=/-/0：界面整体缩放；Ctrl+Z/Y：全局撤销/重做（文本框内保留原生编辑）。</summary>
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Ctrl+= / Ctrl+- / Ctrl+0：整体缩放（允许 Ctrl+Shift+= 产生的 + 号）
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0
+            && (Keyboard.Modifiers & ~(ModifierKeys.Control | ModifierKeys.Shift)) == 0)
+        {
+            switch (e.Key)
+            {
+                case Key.OemPlus or Key.Add:
+                    SetZoom(_uiScale + 0.1);
+                    e.Handled = true;
+                    return;
+                case Key.OemMinus or Key.Subtract:
+                    SetZoom(_uiScale - 0.1);
+                    e.Handled = true;
+                    return;
+                case Key.D0 or Key.NumPad0:
+                    SetZoom(1.0);
+                    e.Handled = true;
+                    return;
+            }
+        }
+
         if (Keyboard.Modifiers == ModifierKeys.Control && e.OriginalSource is not TextBoxBase)
         {
             switch (e.Key)
@@ -251,6 +278,16 @@ public partial class MainWindow : Window
         next.FocusList();
         e.Handled = true;
     }
+
+    // ---- 界面整体缩放：对根面板做 LayoutTransform，文字/图标/边距等比放大，随会话记忆 ----
+
+    private void SetZoom(double scale)
+    {
+        _uiScale = Math.Clamp(Math.Round(scale, 2), 0.8, 2.0);
+        ApplyZoom();
+    }
+
+    private void ApplyZoom() => RootPanel.LayoutTransform = new ScaleTransform(_uiScale, _uiScale);
 
     // ---- 撤销/重做：执行后刷新全部可见窗格，状态显示在最近聚焦的窗格 ----
 
