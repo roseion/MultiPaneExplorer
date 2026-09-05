@@ -349,6 +349,18 @@ public sealed class FileOperationService : IFileOperationService
         return Task.FromResult(destination);
     }
 
+    public Task<string> CreateTextFileAsync(string parentDirectory, string? name = null, CancellationToken cancellationToken = default)
+    {
+        if (!Directory.Exists(parentDirectory))
+            throw new DirectoryNotFoundException($"父目录不存在：{parentDirectory}");
+
+        var baseName = string.IsNullOrWhiteSpace(name) ? "新建文本文档.txt" : name!;
+        var destination = GetAvailableNumberedPath(parentDirectory, baseName);
+        cancellationToken.ThrowIfCancellationRequested();
+        File.WriteAllText(destination, string.Empty);
+        return Task.FromResult(destination);
+    }
+
     /// <summary>在目标目录内为新建项找不冲突的名称：冲突时用"xx (2)"、"xx (3)"递增。</summary>
     internal static string GetAvailableNumberedPath(string targetDirectory, string name)
     {

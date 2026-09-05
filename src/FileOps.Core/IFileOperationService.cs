@@ -44,4 +44,10 @@ public interface IFileOperationService
     /// 返回新目录的完整路径。
     /// </summary>
     Task<string> CreateDirectoryAsync(string parentDirectory, string? name = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 在 parentDirectory 下新建空文本文件；name 为空时使用"新建文本文档.txt"，
+    /// 重名时自动追加序号（"新建文本文档 (2).txt"）。返回新文件的完整路径。
+    /// </summary>
+    Task<string> CreateTextFileAsync(string parentDirectory, string? name = null, CancellationToken cancellationToken = default);
 }
