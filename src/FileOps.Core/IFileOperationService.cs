@@ -17,6 +17,16 @@ public interface IFileOperationService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 把若干源路径（文件或目录）移动到目标目录内。冲突处理与 <see cref="CopyIntoAsync"/> 一致。
+    /// 同卷时直接改名移动；跨卷时复制后删除源（删除失败记入 Errors，已复制数据保留）。
+    /// </summary>
+    Task<CopyResult> MoveIntoAsync(
+        IEnumerable<string> sourcePaths,
+        string targetDirectory,
+        CopyOptions? options = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 把若干路径删除到系统回收站。单个失败不影响其余条目。
     /// </summary>
     Task<DeleteResult> DeleteToRecycleBinAsync(

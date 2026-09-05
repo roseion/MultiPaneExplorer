@@ -56,6 +56,162 @@ public sealed class FileOperationService : IFileOperationService
         return new CopyResult(state.CopiedCount, state.SkippedCount, state.Errors);
     }
 
+    /// <summary>测试用：强制走"复制后删除源"的慢路径（模拟跨卷移动）。</summary>
+    internal bool ForceSlowMove { get; set; }
+
+    public async Task<CopyResult> MoveIntoAsync(
+        IEnumerable<string> sourcePaths,
+        string targetDirectory,
+        CopyOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(sourcePaths);
+        if (!Directory.Exists(targetDirectory))
+            throw new DirectoryNotFoundException($"目标目录不存在：{targetDirectory}");
+
+        var sources = sourcePaths.ToList();
+        var state = new CopyState(options, cancellationToken)
+        {
+            TotalBytes = sources.Sum(SafeSize),
+        };
+
+        foreach (var source in sources)
+        {
+            state.CancellationToken.ThrowIfCancellationRequested();
+            var allowFastMove = !ForceSlowMove && TransferHelper.IsSameVolume(source, targetDirectory);
+            try
+            {
+                if (await MoveItemAsync(source, targetDirectory, Path.GetFileName(
+                        source.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)),
+                        isRoot: true, allowFastMove, state).ConfigureAwait(false))
+                {
+                    state.CopiedCount++;
+                }
+                else
+                {
+                    state.SkippedCount++;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException
+                                          or System.Security.SecurityException)
+            {
+                state.Errors.Add($"移动失败：{source}（{ex.Message}）");
+            }
+        }
+
+        state.ReportProgress(currentFile: string.Empty, final: true);
+        return new CopyResult(state.CopiedCount, state.SkippedCount, state.Errors);
+    }
+
+    private async Task<bool> MoveItemAsync(
+        string source,
+        string targetParent,
+        string displayName,
+        bool isRoot,
+        bool allowFastMove,
+        CopyState state)
+    {
+        // 目录：解析根冲突后逐项移入；Replace 到已存在目录时按"合并"处理
+        if (Directory.Exists(source) && !File.Exists(source))
+        {
+            var (destination, _) = state.ResolveConflict(
+                Path.Combine(targetParent, displayName), source, sourceIsDirectory: true);
+            if (destination is null)
+            {
+                state.DoneBytes += SafeSize(source);
+                state.ReportProgress(source);
+                return false;
+            }
+
+            Directory.CreateDirectory(destination);
+            foreach (var entry in Directory.EnumerateFileSystemEntries(source))
+            {
+                state.CancellationToken.ThrowIfCancellationRequested();
+                await MoveItemAsync(entry, destination, Path.GetFileName(entry),
+                        isRoot: false, allowFastMove, state).ConfigureAwait(false);
+            }
+
+            DeleteSourceQuietly(source, state, isDirectory: true);
+            return true;
+        }
+
+        if (!File.Exists(source))
+        {
+            if (isRoot)
+                state.Errors.Add($"源不存在：{source}");
+            return false;
+        }
+
+        var (destFile, replaced) = state.ResolveConflict(
+            Path.Combine(targetParent, displayName), source, sourceIsDirectory: false);
+        if (destFile is null)
+        {
+            state.DoneBytes += SafeSize(source);
+            state.ReportProgress(source);
+            return false;
+        }
+
+        // 决定"替换"而目标恰好是同名文件夹时，按"移入该文件夹"处理
+        if (replaced && Directory.Exists(destFile))
+            destFile = Path.Combine(destFile, displayName);
+
+        var size = new FileInfo(source).Length;
+        if (allowFastMove && !Directory.Exists(destFile))
+        {
+            File.Move(source, destFile, replaced && File.Exists(destFile));
+        }
+        else
+        {
+            // 跨卷或目标类型不兼容：复制后删除源
+            await CopyFileContentAsync(source, destFile, state).ConfigureAwait(false);
+            DeleteSourceQuietly(source, state, isDirectory: false);
+        }
+
+        state.DoneBytes += size;
+        state.ReportProgress(source);
+        return true;
+    }
+
+    private static async Task CopyFileContentAsync(string source, string destination, CopyState state)
+    {
+        await using var input = new FileStream(
+            source, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        await using var output = new FileStream(
+            destination, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize,
+            FileOptions.Asynchronous);
+
+        var buffer = new byte[BufferSize];
+        int read;
+        while ((read = await input.ReadAsync(buffer.AsMemory(0, buffer.Length), state.CancellationToken)
+                   .ConfigureAwait(false)) > 0)
+        {
+            await output.WriteAsync(buffer.AsMemory(0, read), state.CancellationToken).ConfigureAwait(false);
+            state.DoneBytes += read;
+            state.ReportProgress(source);
+        }
+    }
+
+    private static void DeleteSourceQuietly(string source, CopyState state, bool isDirectory)
+    {
+        try
+        {
+            if (isDirectory)
+                Directory.Delete(source, recursive: true);
+            else
+                File.Delete(source);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                      or System.Security.SecurityException)
+        {
+            state.Errors.Add($"已移入目标，但删除源失败：{source}（{ex.Message}）");
+        }
+    }
+
     /// <summary>复制一个文件或整个目录（递归）。返回 false 表示因冲突被跳过。</summary>
     private async Task<bool> CopyItemAsync(
         string source,
@@ -77,7 +233,7 @@ public sealed class FileOperationService : IFileOperationService
         var destination = state.ResolveConflict(
             Path.Combine(targetParent, displayName),
             source,
-            sourceIsDirectory: true);
+            sourceIsDirectory: true).Destination;
         if (destination is null)
             return false;
 
@@ -102,7 +258,7 @@ public sealed class FileOperationService : IFileOperationService
         var destination = state.ResolveConflict(
             Path.Combine(targetParent, displayName),
             source,
-            sourceIsDirectory: false);
+            sourceIsDirectory: false).Destination;
         if (destination is null)
         {
             // 跳过也要推进进度条
@@ -111,24 +267,7 @@ public sealed class FileOperationService : IFileOperationService
             return false;
         }
 
-        var sourceLength = new FileInfo(source).Length;
-        await using var input = new FileStream(
-            source, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
-        await using var output = new FileStream(
-            destination, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize,
-            FileOptions.Asynchronous);
-
-        var buffer = new byte[BufferSize];
-        int read;
-        while ((read = await input.ReadAsync(buffer.AsMemory(0, buffer.Length), state.CancellationToken)
-                   .ConfigureAwait(false)) > 0)
-        {
-            await output.WriteAsync(buffer.AsMemory(0, read), state.CancellationToken).ConfigureAwait(false);
-            state.DoneBytes += read;
-            state.ReportProgress(source);
-        }
-
+        await CopyFileContentAsync(source, destination, state).ConfigureAwait(false);
         return true;
     }
 
@@ -289,11 +428,12 @@ public sealed class FileOperationService : IFileOperationService
         public int ConflictIndex { get; set; }
         public List<string> Errors { get; } = new();
 
-        /// <summary>决定冲突目标的去向；返回 null 表示跳过。</summary>
-        public string? ResolveConflict(string destination, string source, bool sourceIsDirectory)
+        /// <summary>决定冲突目标的去向；返回 null 表示跳过，Replaced 表示覆盖现有目标。</summary>
+        public (string? Destination, bool Replaced) ResolveConflict(
+            string destination, string source, bool sourceIsDirectory)
         {
             if (!File.Exists(destination) && !Directory.Exists(destination))
-                return destination;
+                return (destination, false);
 
             var decision = OnConflict is null
                 ? ConflictDecision.KeepBoth
@@ -304,11 +444,12 @@ public sealed class FileOperationService : IFileOperationService
 
             return decision switch
             {
-                ConflictDecision.Replace => destination,
-                ConflictDecision.Skip => null,
-                _ => GetAvailablePath(
-                    Path.GetDirectoryName(destination) ?? string.Empty,
-                    Path.GetFileName(destination)),
+                ConflictDecision.Replace => (destination, true),
+                ConflictDecision.Skip => (null, false),
+                _ => (GetAvailablePath(
+                        Path.GetDirectoryName(destination) ?? string.Empty,
+                        Path.GetFileName(destination)),
+                    false),
             };
         }
 
