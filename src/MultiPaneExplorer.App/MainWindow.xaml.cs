@@ -42,6 +42,7 @@ public partial class MainWindow : Window
             if (focused is not null)
                 _lastFocusedPane = focused;
         };
+        UndoHub.Service.Changed += RefreshUndoButtons;
         Closing += (_, _) => SaveSession();
     }
 
@@ -209,9 +210,24 @@ public partial class MainWindow : Window
 
     private IReadOnlyList<ExplorerPane> VisiblePanes() => _panes.Take(_visiblePaneCount).ToList();
 
-    /// <summary>F6：键盘焦点在可见窗格之间循环切换。</summary>
+    /// <summary>F6：键盘焦点在可见窗格之间循环切换；Ctrl+Z/Y：全局撤销/重做（文本框内保留原生编辑）。</summary>
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.OriginalSource is not TextBoxBase)
+        {
+            switch (e.Key)
+            {
+                case Key.Z:
+                    _ = RunUndoRedoAsync(undo: true);
+                    e.Handled = true;
+                    return;
+                case Key.Y:
+                    _ = RunUndoRedoAsync(undo: false);
+                    e.Handled = true;
+                    return;
+            }
+        }
+
         if (e.Key is not Key.F6)
             return;
 
@@ -232,6 +248,42 @@ public partial class MainWindow : Window
         var next = visible[(currentIndex + 1) % visible.Count];
         next.FocusList();
         e.Handled = true;
+    }
+
+    // ---- 撤销/重做：执行后刷新全部可见窗格，状态显示在最近聚焦的窗格 ----
+
+    private async void UndoButton_Click(object sender, RoutedEventArgs e) => await RunUndoRedoAsync(undo: true);
+
+    private async void RedoButton_Click(object sender, RoutedEventArgs e) => await RunUndoRedoAsync(undo: false);
+
+    private async Task RunUndoRedoAsync(bool undo)
+    {
+        var service = UndoHub.Service;
+        var target = _lastFocusedPane ?? _panes[0];
+        try
+        {
+            var description = undo ? await service.UndoAsync() : await service.RedoAsync();
+            foreach (var pane in VisiblePanes())
+                pane.ForEachTab(vm => vm.RefreshCommand.Execute(null));
+            target.Vm.ShowTransientStatus((undo ? "已撤销：" : "已重做：") + description);
+        }
+        catch (Exception ex)
+        {
+            target.Vm.ShowTransientStatus((undo ? "撤销" : "重做") + $"失败：{ex.Message}");
+        }
+        RefreshUndoButtons();
+    }
+
+    private void RefreshUndoButtons()
+    {
+        UndoButton.IsEnabled = UndoHub.Service.CanUndo;
+        UndoButton.ToolTip = UndoHub.Service.UndoDescription is { } undoDescription
+            ? $"撤销：{undoDescription} (Ctrl+Z)"
+            : "无可撤销操作 (Ctrl+Z)";
+        RedoButton.IsEnabled = UndoHub.Service.CanRedo;
+        RedoButton.ToolTip = UndoHub.Service.RedoDescription is { } redoDescription
+            ? $"重做：{redoDescription} (Ctrl+Y)"
+            : "无可重做操作 (Ctrl+Y)";
     }
 
     private void Layout_Checked(object sender, RoutedEventArgs e)

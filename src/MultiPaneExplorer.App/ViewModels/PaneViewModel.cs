@@ -15,6 +15,7 @@ public partial class PaneViewModel : ObservableObject
     private readonly IFileOperationService _fileOps;
     private readonly IShortcutService _shortcuts;
     private readonly ISearchService _search;
+    private readonly IRecycleBinService _recycleBin;
     private readonly Stack<string?> _back = new();
     private readonly Stack<string?> _forward = new();
     private readonly System.Windows.Threading.DispatcherTimer _refreshTimer;
@@ -27,11 +28,13 @@ public partial class PaneViewModel : ObservableObject
     public PaneViewModel(
         IFileOperationService? fileOps = null,
         IShortcutService? shortcuts = null,
-        ISearchService? search = null)
+        ISearchService? search = null,
+        IRecycleBinService? recycleBin = null)
     {
         _fileOps = fileOps ?? new FileOperationService();
         _shortcuts = shortcuts ?? new WshShortcutService();
         _search = search ?? new FileSystemSearchService();
+        _recycleBin = recycleBin ?? new RecycleBinService();
         _refreshTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
         _refreshTimer.Tick += (_, _) =>
         {
@@ -536,6 +539,10 @@ public partial class PaneViewModel : ObservableObject
                 : result.SkippedCount > 0
                     ? $"已{verb} {result.CopiedCount} 个项目，跳过 {result.SkippedCount} 个"
                     : $"已{verb} {result.CopiedCount} 个项目";
+
+            if (result.CopiedCount > 0 && result.Transferred is { Count: > 0 })
+                UndoHub.Service.Push(new TransferOperation(
+                    _fileOps, result.Transferred, target, move, verb, result.ReplacedAny));
         }
         catch (OperationCanceledException)
         {
@@ -587,10 +594,19 @@ public partial class PaneViewModel : ObservableObject
         StatusText = $"正在删除 {paths.Count} 个项目…";
         try
         {
+            var snapshot = _recycleBin.Snapshot();
             var result = await Task.Run(() => _fileOps.DeleteToRecycleBinAsync(paths));
             StatusText = result.HasErrors
                 ? $"删除完成：{result.DeletedCount} 个成功，{result.Errors.Count} 个失败"
                 : $"已删除 {result.DeletedCount} 个项目到回收站";
+
+            if (result.DeletedCount > 0)
+            {
+                // 对比删除前后的回收站快照，拿到本次删除的条目（撤销=还原）
+                var newEntries = await _recycleBin.DiffAsync(snapshot);
+                if (newEntries.Count > 0)
+                    UndoHub.Service.Push(new DeleteOperation(_fileOps, _recycleBin, paths, newEntries));
+            }
         }
         catch (Exception ex)
         {
@@ -619,6 +635,7 @@ public partial class PaneViewModel : ObservableObject
         try
         {
             var newPath = await _fileOps.RenameAsync(path, dialog.InputText.Trim());
+            UndoHub.Service.Push(new RenameOperation(_fileOps, path, newPath));
             StatusText = $"已重命名为：{Path.GetFileName(newPath)}";
         }
         catch (Exception ex)
@@ -640,6 +657,7 @@ public partial class PaneViewModel : ObservableObject
         try
         {
             var created = await Task.Run(() => _fileOps.CreateDirectoryAsync(CurrentPath));
+            UndoHub.Service.Push(new CreateOperation(created, isDirectory: true));
             StatusText = $"已新建文件夹：{Path.GetFileName(created)}";
         }
         catch (Exception ex)
@@ -661,6 +679,7 @@ public partial class PaneViewModel : ObservableObject
         try
         {
             var created = await Task.Run(() => _fileOps.CreateTextFileAsync(CurrentPath));
+            UndoHub.Service.Push(new CreateOperation(created, isDirectory: false));
             StatusText = $"已新建文本文档：{Path.GetFileName(created)}";
         }
         catch (Exception ex)
@@ -669,6 +688,9 @@ public partial class PaneViewModel : ObservableObject
         }
         LoadEntries();
     }
+
+    /// <summary>显示一条由外部（如全局撤销/重做）触发的状态信息。</summary>
+    public void ShowTransientStatus(string message) => StatusText = message;
 
     /// <summary>关闭标签页时释放资源：停止刷新定时器与目录监视，取消进行中的搜索。</summary>
     public void Shutdown()

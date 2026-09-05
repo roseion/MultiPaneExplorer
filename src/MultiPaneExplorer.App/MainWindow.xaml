@@ -31,6 +31,14 @@
                           VerticalContentAlignment="Center"
                           ToolTip="切换所有窗格是否显示隐藏文件"
                           Checked="HiddenFiles_Changed" Unchecked="HiddenFiles_Changed"/>
+                <Button x:Name="UndoButton" Content="&#xE7A7;" Width="30" Height="24" Margin="16,0,0,0"
+                        FontFamily="Segoe MDL2 Assets" IsEnabled="False"
+                        ToolTip="撤销 (Ctrl+Z)"
+                        Click="UndoButton_Click"/>
+                <Button x:Name="RedoButton" Content="&#xE7A6;" Width="30" Height="24" Margin="4,0,0,0"
+                        FontFamily="Segoe MDL2 Assets" IsEnabled="False"
+                        ToolTip="重做 (Ctrl+Y)"
+                        Click="RedoButton_Click"/>
                 <Button x:Name="FavoritesButton" Content="★ 收藏"
                         Margin="16,0,0,0"
                         ToolTip="收藏夹：点击条目跳转激活窗格"

@@ -463,6 +463,10 @@ public partial class ExplorerPane : UserControl
 
     private void Pane_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // 焦点在文本框内时放行原生编辑快捷键（Ctrl+C/X/V/Z/A 等），避免误触文件操作
+        if (e.OriginalSource is TextBoxBase)
+            return;
+
         // Ctrl+Shift+C：复制文件路径
         if (e.Key is Key.C && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
         {
