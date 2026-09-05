@@ -189,6 +189,6 @@ public partial class MainWindow : Window
     {
         var show = HiddenFilesToggle?.IsChecked == true;
         foreach (var pane in _panes)
-            pane.Vm.ShowHiddenFiles = show;
+            pane.ForEachTab(vm => vm.ShowHiddenFiles = show);
     }
 }

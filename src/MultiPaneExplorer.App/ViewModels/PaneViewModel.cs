@@ -490,6 +490,14 @@ public partial class PaneViewModel : ObservableObject
         LoadEntries();
     }
 
+    /// <summary>关闭标签页时释放资源：停止刷新定时器与目录监视。</summary>
+    public void Shutdown()
+    {
+        _refreshTimer.Stop();
+        _watcher?.Dispose();
+        _watcher = null;
+    }
+
     private void LoadEntries()
     {
         Entries.Clear();

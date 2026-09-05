@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -23,6 +24,12 @@ public partial class ExplorerPane : UserControl
     private Point _dragStartPosition;
     private bool _dragArmed;
     private DragDropEffects _pendingDropEffect;
+    private readonly List<PaneViewModel> _tabs = [];
+    private int _activeTabIndex;
+
+    private static readonly Brush DropHintBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD7));
+    private static readonly Brush ActiveTabBrush = Brushes.White;
+    private static readonly Brush TabBorderBrush = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC));
 
     private static readonly Dictionary<string, string> SortHeaderTitles = new()
     {
@@ -35,20 +42,24 @@ public partial class ExplorerPane : UserControl
     public ExplorerPane()
     {
         InitializeComponent();
-        Vm = new PaneViewModel();
+        Vm = CreateTab();
+        _tabs.Add(Vm);
         DataContext = Vm;
         Loaded += (_, _) =>
         {
             if (_initialized)
                 return;
             _initialized = true;
-            Vm.CurrentPathChanged += OnCurrentPathChanged;
             Vm.Initialize(InitialPath);
             UpdateSortHeaders();
+            RefreshTabStrip();
             if (FocusOnLoad)
                 EntryList.Focus();
         };
     }
+
+    /// <summary>当前激活标签页的视图模型（导航栏/列表/文件树都作用于它）。</summary>
+    public PaneViewModel Vm { get; }
 
     /// <summary>窗格首次加载时定位到的目录；为空或不存在时停留在"此电脑"。</summary>
     public string? InitialPath
@@ -64,7 +75,116 @@ public partial class ExplorerPane : UserControl
         set => SetValue(FocusOnLoadProperty, value);
     }
 
-    public PaneViewModel Vm { get; }
+    private void NewTabButton_Click(object sender, RoutedEventArgs e) => AddTab();
+
+    private PaneViewModel CreateTab()
+    {
+        var tab = new PaneViewModel();
+        tab.CurrentPathChanged += path =>
+        {
+            if (ReferenceEquals(tab, Vm))
+                OnCurrentPathChanged(path);
+            RefreshTabStrip();
+        };
+        return tab;
+    }
+
+    private void AddTab()
+    {
+        var tab = CreateTab();
+        tab.Initialize(Vm.CurrentPath);
+        _tabs.Insert(_activeTabIndex + 1, tab);
+        SwitchTab(_activeTabIndex + 1);
+    }
+
+    private void CloseTab(int index)
+    {
+        if (index < 0 || index >= _tabs.Count || _tabs.Count == 1)
+            return;
+        var closing = _tabs[index];
+        _tabs.RemoveAt(index);
+        closing.Shutdown();
+        SwitchTab(Math.Min(index, _tabs.Count - 1));
+    }
+
+    private void SwitchTab(int index)
+    {
+        if (index < 0 || index >= _tabs.Count)
+            return;
+        _activeTabIndex = index;
+        DataContext = Vm;
+        UpdateSortHeaders();
+        _revealing = true;
+        try
+        {
+            Vm.RevealInTree();
+        }
+        finally
+        {
+            _revealing = false;
+        }
+        RefreshTabStrip();
+        EntryList.Focus();
+    }
+
+    private static string TitleOf(PaneViewModel tab)
+    {
+        if (tab.CurrentPath is null)
+            return "此电脑";
+        var name = Path.GetFileName(tab.CurrentPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        return string.IsNullOrEmpty(name) ? tab.CurrentPath : name;
+    }
+
+    private void RefreshTabStrip()
+    {
+        TabStrip.Children.Clear();
+        for (var i = 0; i < _tabs.Count; i++)
+        {
+            var index = i;
+            var closeButton = new Button
+            {
+                Content = "✕",
+                Width = 16,
+                Height = 16,
+                Padding = new Thickness(0),
+                FontSize = 9,
+                BorderThickness = new Thickness(0),
+                Background = Brushes.Transparent,
+                Margin = new Thickness(6, 0, 0, 0),
+            };
+            closeButton.Click += (_, e) =>
+            {
+                e.Handled = true;
+                CloseTab(index);
+            };
+
+            var content = new StackPanel { Orientation = Orientation.Horizontal };
+            content.Children.Add(new TextBlock
+            {
+                Text = TitleOf(_tabs[index]),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            content.Children.Add(closeButton);
+
+            var tabButton = new Button
+            {
+                Content = content,
+                Padding = new Thickness(8, 2, 4, 2),
+                Margin = new Thickness(0, 0, 3, 0),
+                Background = i == _activeTabIndex ? ActiveTabBrush : Brushes.Transparent,
+                BorderBrush = TabBorderBrush,
+            };
+            tabButton.Click += (_, _) => SwitchTab(index);
+            TabStrip.Children.Add(tabButton);
+        }
+    }
+
+    /// <summary>对所有标签页执行同一操作（如全局设置下发）。</summary>
+    public void ForEachTab(Action<PaneViewModel> action)
+    {
+        foreach (var tab in _tabs)
+            action(tab);
+    }
 
     public void FocusList() => EntryList.Focus();
 
@@ -190,12 +310,19 @@ public partial class ExplorerPane : UserControl
                 Vm.PasteCommand.Execute(null);
                 e.Handled = true;
                 break;
+            case Key.T:
+                AddTab();
+                e.Handled = true;
+                break;
+            case Key.W:
+                CloseTab(_activeTabIndex);
+                e.Handled = true;
+                break;
         }
     }
 
     // ---- 跨窗格拖拽：默认同盘移动、Ctrl=复制、Shift=移动、跨盘=复制 ----
 
-    private static readonly Brush DropHintBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD7));
 
     private void EntryList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
