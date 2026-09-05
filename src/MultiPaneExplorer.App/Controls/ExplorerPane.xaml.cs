@@ -237,6 +237,22 @@ public partial class ExplorerPane : UserControl
         e.Handled = true;
     }
 
+    private void OpenWith_Click(object sender, RoutedEventArgs e)
+    {
+        if (Vm.SelectedPaths.Count == 0)
+            return;
+        FileOps.Core.ShellDialogs.ShowOpenWithDialog(Vm.SelectedPaths[0]);
+    }
+
+    private void Properties_Click(object sender, RoutedEventArgs e)
+    {
+        if (Vm.SelectedPaths.Count == 0)
+            return;
+        var window = Window.GetWindow(this);
+        var ownerHwnd = window is null ? IntPtr.Zero : new System.Windows.Interop.WindowInteropHelper(window).Handle;
+        FileOps.Core.ShellDialogs.ShowFileProperties(ownerHwnd, Vm.SelectedPaths[0]);
+    }
+
     private void EntryList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
         Vm.SetSelection(EntryList.SelectedItems.Cast<FsEntry>().Select(item => item.FullPath));
 

@@ -110,6 +110,9 @@
                                   InputGestureText="Del"
                                   Command="{Binding PlacementTarget.DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         <Separator/>
+                        <MenuItem Header="打开方式…" Click="OpenWith_Click"/>
+                        <MenuItem Header="属性" Click="Properties_Click"/>
+                        <Separator/>
                         <MenuItem Header="刷新"
                                   InputGestureText="F5"
                                   Command="{Binding PlacementTarget.DataContext.RefreshCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
