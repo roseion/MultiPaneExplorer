@@ -5,10 +5,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FileOps.Core;
 using MultiPaneExplorer.App.Models;
+using MultiPaneExplorer.App.Views;
 
 namespace MultiPaneExplorer.App.ViewModels;
 
-/// <summary>单个窗格的状态与逻辑：导航历史、目录列表、复制/粘贴。</summary>
+/// <summary>单个窗格的状态与逻辑：导航历史、目录列表、文件树、复制/粘贴/删除/重命名/新建。</summary>
 public partial class PaneViewModel : ObservableObject
 {
     private readonly IFileOperationService _fileOps;
@@ -34,13 +35,24 @@ public partial class PaneViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "就绪";
 
+    /// <summary>文件树侧栏是否可见（每窗格独立）。</summary>
+    [ObservableProperty]
+    private bool _showTree = true;
+
+    /// <summary>文件树根节点（驱动器）。</summary>
+    public ObservableCollection<FsTreeNode> TreeRoots { get; } = new();
+
     /// <summary>当前选中条目的完整路径，由视图在选中变化时回写。</summary>
     public IReadOnlyList<string> SelectedPaths { get; private set; } = [];
+
+    /// <summary>当前目录变化后通知视图同步文件树定位。</summary>
+    public event Action<string?>? CurrentPathChanged;
 
     partial void OnCurrentPathChanged(string? value)
     {
         PathText = value ?? "此电脑";
         UpCommand.NotifyCanExecuteChanged();
+        CurrentPathChanged?.Invoke(value);
     }
 
     /// <summary>首次加载：定位到 initialPath，不写入导航历史。只生效一次。</summary>
@@ -49,6 +61,7 @@ public partial class PaneViewModel : ObservableObject
         if (_initialized)
             return;
         _initialized = true;
+        LoadTreeRoots();
         CurrentPath = Directory.Exists(initialPath) ? initialPath : null;
         LoadEntries();
     }
@@ -98,6 +111,30 @@ public partial class PaneViewModel : ObservableObject
         }
 
         StatusText = $"路径不存在：{text}";
+    }
+
+    /// <summary>让文件树定位并选中当前目录（找不到时保持树状态不变）。</summary>
+    public void RevealInTree()
+    {
+        if (CurrentPath is null)
+            return;
+        foreach (var root in TreeRoots)
+        {
+            if (root.TryReveal(CurrentPath))
+                return;
+        }
+    }
+
+    private void LoadTreeRoots()
+    {
+        if (TreeRoots.Count > 0)
+            return;
+        foreach (var drive in DriveInfo.GetDrives()
+                     .Where(d => d.IsReady)
+                     .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            TreeRoots.Add(new FsTreeNode(drive.Name, name: drive.Name));
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
@@ -190,12 +227,6 @@ public partial class PaneViewModel : ObservableObject
     [RelayCommand]
     private async Task PasteAsync()
     {
-        if (CurrentPath is null)
-        {
-            StatusText = "“此电脑”不能作为粘贴目标，请先进入某个目录";
-            return;
-        }
-
         var sources = new List<string>();
         try
         {
@@ -214,6 +245,18 @@ public partial class PaneViewModel : ObservableObject
             return;
         }
 
+        await PastePathsAsync(sources);
+    }
+
+    /// <summary>把指定路径列表粘贴（复制）到当前目录；剪贴板粘贴与拖拽放置共用。</summary>
+    public async Task PastePathsAsync(IReadOnlyList<string> sources)
+    {
+        if (CurrentPath is null)
+        {
+            StatusText = "“此电脑”不能作为粘贴目标，请先进入某个目录";
+            return;
+        }
+
         var target = CurrentPath;
         StatusText = $"正在粘贴 {sources.Count} 个项目…";
         try
@@ -226,6 +269,78 @@ public partial class PaneViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusText = $"粘贴失败：{ex.Message}";
+        }
+        LoadEntries();
+    }
+
+    [RelayCommand]
+    private async Task DeleteAsync()
+    {
+        if (SelectedPaths.Count == 0)
+            return;
+
+        var paths = SelectedPaths.ToList();
+        StatusText = $"正在删除 {paths.Count} 个项目…";
+        try
+        {
+            var result = await Task.Run(() => _fileOps.DeleteToRecycleBinAsync(paths));
+            StatusText = result.HasErrors
+                ? $"删除完成：{result.DeletedCount} 个成功，{result.Errors.Count} 个失败"
+                : $"已删除 {result.DeletedCount} 个项目到回收站";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"删除失败：{ex.Message}";
+        }
+        LoadEntries();
+    }
+
+    [RelayCommand]
+    private async Task RenameAsync()
+    {
+        if (SelectedPaths.Count != 1)
+        {
+            StatusText = "请先选中一个要重命名的项目";
+            return;
+        }
+
+        var path = SelectedPaths[0];
+        var dialog = new RenameDialog(Path.GetFileName(path))
+        {
+            Owner = System.Windows.Application.Current.MainWindow,
+        };
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            var newPath = await _fileOps.RenameAsync(path, dialog.InputText.Trim());
+            StatusText = $"已重命名为：{Path.GetFileName(newPath)}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"重命名失败：{ex.Message}";
+        }
+        LoadEntries();
+    }
+
+    [RelayCommand]
+    private async Task NewFolderAsync()
+    {
+        if (CurrentPath is null)
+        {
+            StatusText = "“此电脑”下不能新建文件夹，请先进入某个目录";
+            return;
+        }
+
+        try
+        {
+            var created = await Task.Run(() => _fileOps.CreateDirectoryAsync(CurrentPath));
+            StatusText = $"已新建文件夹：{Path.GetFileName(created)}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"新建文件夹失败：{ex.Message}";
         }
         LoadEntries();
     }
