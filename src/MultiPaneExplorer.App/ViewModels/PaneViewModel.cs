@@ -149,13 +149,13 @@ public partial class PaneViewModel : ObservableObject
                     continue;
                 var chunk = batch;
                 batch = new List<FsEntry>();
-                dispatcher.BeginInvoke(() => AppendSearchResults(generation, chunk));
+                _ = dispatcher.BeginInvoke(() => AppendSearchResults(generation, chunk));
             }
 
             if (batch.Count > 0)
             {
                 var chunk = batch;
-                dispatcher.BeginInvoke(() => AppendSearchResults(generation, chunk));
+                _ = dispatcher.BeginInvoke(() => AppendSearchResults(generation, chunk));
             }
         }
         catch (OperationCanceledException)
@@ -284,7 +284,7 @@ public partial class PaneViewModel : ObservableObject
 
     /// <summary>文件系统事件防抖：重置 300ms 定时器，静止后统一刷新一次。</summary>
     private void ScheduleAutoRefresh() =>
-        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+        _ = System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             if (!_initialized || _isBusy)
                 return;

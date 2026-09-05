@@ -187,6 +187,40 @@ public partial class ExplorerPane : UserControl
             action(tab);
     }
 
+    /// <summary>捕获当前窗格状态（用于会话保存）。</summary>
+    public Services.PaneState CaptureState() => new()
+    {
+        ShowTree = Vm.ShowTree,
+        ActiveTabIndex = _activeTabIndex,
+        Tabs = _tabs.Select(tab => new Services.PaneTabState { Path = tab.CurrentPath }).ToList(),
+    };
+
+    /// <summary>按会话状态恢复标签页（布局与全局设置由主窗口负责）。</summary>
+    public void RestoreState(Services.PaneState state)
+    {
+        foreach (var tab in _tabs)
+            tab.Shutdown();
+        _tabs.Clear();
+
+        foreach (var tabState in state.Tabs)
+        {
+            var tab = CreateTab();
+            tab.ShowTree = state.ShowTree;
+            tab.Initialize(tabState.Path);
+            _tabs.Add(tab);
+        }
+
+        if (_tabs.Count == 0)
+        {
+            var tab = CreateTab();
+            tab.ShowTree = state.ShowTree;
+            tab.Initialize(null);
+            _tabs.Add(tab);
+        }
+
+        SwitchTab(Math.Clamp(state.ActiveTabIndex, 0, _tabs.Count - 1));
+    }
+
     public void FocusList() => EntryList.Focus();
 
     /// <summary>窗格目录变化时（含列表/地址栏/前进后退），让文件树跟随定位。</summary>

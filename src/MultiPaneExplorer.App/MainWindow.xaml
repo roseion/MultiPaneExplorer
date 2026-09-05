@@ -10,19 +10,19 @@
                 BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="布局：" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <RadioButton GroupName="PaneLayout" Content="双栏" Tag="Two" IsChecked="True"
+                <RadioButton x:Name="LayoutTwoButton" GroupName="PaneLayout" Content="双栏" Tag="Two" IsChecked="True"
                              VerticalContentAlignment="Center" Margin="0,0,8,0"
                              ToolTip="左右双栏"
                              Checked="Layout_Checked"/>
-                <RadioButton GroupName="PaneLayout" Content="三栏" Tag="Three"
+                <RadioButton x:Name="LayoutThreeButton" GroupName="PaneLayout" Content="三栏" Tag="Three"
                              VerticalContentAlignment="Center" Margin="0,0,8,0"
                              ToolTip="三列并列"
                              Checked="Layout_Checked"/>
-                <RadioButton GroupName="PaneLayout" Content="四栏（田字）" Tag="FourGrid"
+                <RadioButton x:Name="LayoutFourGridButton" GroupName="PaneLayout" Content="四栏（田字）" Tag="FourGrid"
                              VerticalContentAlignment="Center" Margin="0,0,8,0"
                              ToolTip="田字格四栏，横竖分隔条均可拖拽"
                              Checked="Layout_Checked"/>
-                <RadioButton GroupName="PaneLayout" Content="四栏（并排）" Tag="FourColumns"
+                <RadioButton x:Name="LayoutFourColumnsButton" GroupName="PaneLayout" Content="四栏（并排）" Tag="FourColumns"
                              VerticalContentAlignment="Center" Margin="0,0,16,0"
                              ToolTip="单行四列并排，分隔条均可拖拽"
                              Checked="Layout_Checked"/>
@@ -30,6 +30,10 @@
                           VerticalContentAlignment="Center"
                           ToolTip="切换所有窗格是否显示隐藏文件"
                           Checked="HiddenFiles_Changed" Unchecked="HiddenFiles_Changed"/>
+                <Button x:Name="FavoritesButton" Content="★ 收藏"
+                        Margin="16,0,0,0"
+                        ToolTip="收藏夹：点击条目跳转激活窗格"
+                        Click="FavoritesButton_Click"/>
             </StackPanel>
         </Border>
         <Grid x:Name="PaneGrid"/>
