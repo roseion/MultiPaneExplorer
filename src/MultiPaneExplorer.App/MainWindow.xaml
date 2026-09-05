@@ -18,9 +18,13 @@
                              VerticalContentAlignment="Center" Margin="0,0,8,0"
                              ToolTip="三列并列"
                              Checked="Layout_Checked"/>
-                <RadioButton GroupName="PaneLayout" Content="四栏" Tag="Four"
+                <RadioButton GroupName="PaneLayout" Content="四栏（田字）" Tag="FourGrid"
+                             VerticalContentAlignment="Center" Margin="0,0,8,0"
+                             ToolTip="田字格四栏，横竖分隔条均可拖拽"
+                             Checked="Layout_Checked"/>
+                <RadioButton GroupName="PaneLayout" Content="四栏（并排）" Tag="FourColumns"
                              VerticalContentAlignment="Center" Margin="0,0,16,0"
-                             ToolTip="田字格四栏，分隔条均可拖拽"
+                             ToolTip="单行四列并排，分隔条均可拖拽"
                              Checked="Layout_Checked"/>
                 <CheckBox x:Name="HiddenFilesToggle" Content="显示隐藏文件"
                           VerticalContentAlignment="Center"

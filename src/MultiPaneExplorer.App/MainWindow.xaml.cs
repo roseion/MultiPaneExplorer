@@ -17,7 +17,8 @@ public partial class MainWindow : Window
     {
         Two,
         Three,
-        Four,
+        FourGrid,
+        FourColumns,
     }
 
     private static readonly SolidColorBrush SplitterBrush = new(Color.FromRgb(0xDD, 0xDD, 0xDD));
@@ -67,9 +68,9 @@ public partial class MainWindow : Window
         PaneGrid.RowDefinitions.Clear();
         PaneGrid.ColumnDefinitions.Clear();
 
-        if (_visiblePaneCount <= 3)
+        if (layout != PaneLayout.FourGrid)
         {
-            // n 个窗格需要 2n-1 列：窗格占偶数列（等分剩余空间），分隔条占奇数列（Auto，固定 6px）
+            // 2/3/4 窗格并排：n 个窗格需要 2n-1 列——窗格占偶数列（等分剩余空间），分隔条占奇数列（Auto，固定 6px）
             for (var i = 0; i < _visiblePaneCount * 2 - 1; i++)
             {
                 PaneGrid.ColumnDefinitions.Add(i % 2 == 0
