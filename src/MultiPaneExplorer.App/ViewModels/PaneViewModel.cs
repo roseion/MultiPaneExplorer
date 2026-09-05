@@ -80,18 +80,26 @@ public partial class PaneViewModel : ObservableObject
     [ObservableProperty]
     private bool _searchSubdirectories;
 
+    /// <summary>当前窗格是否处于回收站视图。</summary>
+    [ObservableProperty]
+    private bool _isRecycleBinView;
+
     /// <summary>文件树根节点（驱动器）。</summary>
     public ObservableCollection<FsTreeNode> TreeRoots { get; } = new();
 
     /// <summary>当前选中条目的完整路径，由视图在选中变化时回写。</summary>
     public IReadOnlyList<string> SelectedPaths { get; private set; } = [];
 
+    /// <summary>当前选中的条目对象（还原等需要元数据的操作使用）。</summary>
+    public IReadOnlyList<FsEntry> SelectedEntries { get; private set; } = [];
+
     /// <summary>当前目录变化后通知视图同步文件树定位。</summary>
     public event Action<string?>? CurrentPathChanged;
 
     partial void OnCurrentPathChanged(string? value)
     {
-        PathText = value ?? "此电脑";
+        PathText = value == SpecialLocations.RecycleBin ? "回收站" : value ?? "此电脑";
+        IsRecycleBinView = value == SpecialLocations.RecycleBin;
         UpCommand.NotifyCanExecuteChanged();
         RestartWatcher(value);
         if (FilterText.Length > 0)
@@ -188,7 +196,9 @@ public partial class PaneViewModel : ObservableObject
             return;
         _initialized = true;
         LoadTreeRoots();
-        CurrentPath = Directory.Exists(initialPath) ? initialPath : null;
+        CurrentPath = initialPath == SpecialLocations.RecycleBin || Directory.Exists(initialPath)
+            ? initialPath
+            : null;
         LoadEntries();
     }
 
@@ -196,6 +206,7 @@ public partial class PaneViewModel : ObservableObject
     {
         var items = entries.ToList();
         SelectedPaths = items.Select(item => item.FullPath).ToList();
+        SelectedEntries = items;
 
         if (items.Count == 0)
             return; // 取消选中时保留原状态文本
@@ -231,6 +242,12 @@ public partial class PaneViewModel : ObservableObject
         if (trimmed.Length == 0 || trimmed == "此电脑")
         {
             NavigateTo(null);
+            return;
+        }
+
+        if (trimmed is "回收站" or SpecialLocations.RecycleBin)
+        {
+            NavigateTo(SpecialLocations.RecycleBin);
             return;
         }
 
@@ -324,12 +341,72 @@ public partial class PaneViewModel : ObservableObject
     {
         if (TreeRoots.Count > 0)
             return;
+        TreeRoots.Add(new FsTreeNode(SpecialLocations.RecycleBin, "回收站"));
         foreach (var drive in DriveInfo.GetDrives()
                      .Where(d => d.IsReady)
                      .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
         {
             TreeRoots.Add(new FsTreeNode(drive.Name, name: drive.Name));
         }
+    }
+
+    [RelayCommand]
+    private void OpenRecycleBin() => NavigateTo(SpecialLocations.RecycleBin);
+
+    [RelayCommand]
+    private async Task RestoreSelectedAsync()
+    {
+        var targets = SelectedEntries
+            .Where(entry => entry.BinEntry is not null)
+            .Select(entry => entry.BinEntry!)
+            .ToList();
+        if (targets.Count == 0)
+            return;
+
+        StatusText = $"正在还原 {targets.Count} 个项目…";
+        var restored = await _recycleBin.RestoreAsync(targets);
+        StatusText = restored.Count == targets.Count
+            ? $"已还原 {restored.Count} 个项目"
+            : $"还原完成：{restored.Count} 个成功，{targets.Count - restored.Count} 个失败";
+        LoadEntries();
+    }
+
+    [RelayCommand]
+    private async Task RestoreAllAsync()
+    {
+        var targets = Entries
+            .Where(entry => entry.BinEntry is not null)
+            .Select(entry => entry.BinEntry!)
+            .ToList();
+        if (targets.Count == 0)
+            return;
+
+        StatusText = $"正在还原全部 {targets.Count} 个项目…";
+        var restored = await _recycleBin.RestoreAsync(targets);
+        StatusText = restored.Count == targets.Count
+            ? $"已还原全部 {restored.Count} 个项目"
+            : $"还原完成：{restored.Count} 个成功，{targets.Count - restored.Count} 个失败";
+        LoadEntries();
+    }
+
+    [RelayCommand]
+    private async Task EmptyRecycleBinAsync()
+    {
+        var owner = System.Windows.Application.Current.MainWindow;
+        var confirm = System.Windows.MessageBox.Show(
+            owner,
+            $"确定清空回收站吗？共 {Entries.Count} 个项目。\n此操作不可撤销。",
+            "清空回收站",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        StatusText = "正在清空回收站…";
+        var deleted = await _recycleBin.EmptyAsync();
+        StatusText = $"已清空回收站（{deleted} 个项目）";
+        LoadEntries();
     }
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
@@ -384,6 +461,12 @@ public partial class PaneViewModel : ObservableObject
         if (entry is null)
             return;
 
+        if (entry.BinEntry is not null)
+        {
+            StatusText = "项目在回收站中：请先还原后再打开";
+            return;
+        }
+
         if (entry.IsDirectory)
         {
             NavigateTo(entry.FullPath);
@@ -414,7 +497,15 @@ public partial class PaneViewModel : ObservableObject
 
     /// <summary>剪切：与资源管理器一致写入 Preferred DropEffect=Move，粘贴时按移动处理。</summary>
     [RelayCommand]
-    private void Cut() => SetClipboardFiles(ClipboardDropEffect.Move, "已剪切 {0} 个项目");
+    private void Cut()
+    {
+        if (IsRecycleBinView)
+        {
+            StatusText = "回收站中的项目不能剪切";
+            return;
+        }
+        SetClipboardFiles(ClipboardDropEffect.Move, "已剪切 {0} 个项目");
+    }
 
     [RelayCommand]
     private void CopyPath()
@@ -493,6 +584,12 @@ public partial class PaneViewModel : ObservableObject
     /// 传输在后台线程执行，进度实时更新状态栏，同名冲突弹出对话框询问。</summary>
     public async Task PastePathsAsync(IReadOnlyList<string> sources, bool move = false)
     {
+        if (IsRecycleBinView)
+        {
+            StatusText = "不能把文件粘贴到回收站";
+            return;
+        }
+
         if (CurrentPath is null)
         {
             StatusText = "“此电脑”不能作为粘贴目标，请先进入某个目录";
@@ -590,6 +687,20 @@ public partial class PaneViewModel : ObservableObject
         if (SelectedPaths.Count == 0)
             return;
 
+        if (IsRecycleBinView)
+        {
+            // 回收站视图内删除 = 永久删除（不可撤销）
+            var targets = SelectedEntries
+                .Where(entry => entry.BinEntry is not null)
+                .Select(entry => entry.BinEntry!)
+                .ToList();
+            StatusText = $"正在永久删除 {targets.Count} 个项目…";
+            var deleted = await _recycleBin.DeletePermanentlyAsync(targets);
+            StatusText = $"已永久删除 {deleted} 个项目（不可撤销）";
+            LoadEntries();
+            return;
+        }
+
         var paths = SelectedPaths.ToList();
         StatusText = $"正在删除 {paths.Count} 个项目…";
         try
@@ -618,6 +729,12 @@ public partial class PaneViewModel : ObservableObject
     [RelayCommand]
     private async Task RenameAsync()
     {
+        if (IsRecycleBinView)
+        {
+            StatusText = "回收站中的项目不能重命名";
+            return;
+        }
+
         if (SelectedPaths.Count != 1)
         {
             StatusText = "请先选中一个要重命名的项目";
@@ -648,9 +765,9 @@ public partial class PaneViewModel : ObservableObject
     [RelayCommand]
     private async Task NewFolderAsync()
     {
-        if (CurrentPath is null)
+        if (CurrentPath is null || IsRecycleBinView)
         {
-            StatusText = "“此电脑”下不能新建文件夹，请先进入某个目录";
+            StatusText = "“此电脑”和“回收站”下不能新建文件夹，请先进入某个目录";
             return;
         }
 
@@ -670,9 +787,9 @@ public partial class PaneViewModel : ObservableObject
     [RelayCommand]
     private async Task NewTextFileAsync()
     {
-        if (CurrentPath is null)
+        if (CurrentPath is null || IsRecycleBinView)
         {
-            StatusText = "“此电脑”下不能新建文件，请先进入某个目录";
+            StatusText = "“此电脑”和“回收站”下不能新建文件，请先进入某个目录";
             return;
         }
 
@@ -707,6 +824,11 @@ public partial class PaneViewModel : ObservableObject
         _searchCts?.Cancel();
         Entries.Clear();
         var path = CurrentPath;
+        if (path == SpecialLocations.RecycleBin)
+        {
+            _ = LoadRecycleBinAsync(_searchGeneration);
+            return;
+        }
         try
         {
             if (path is null)
@@ -753,6 +875,37 @@ public partial class PaneViewModel : ObservableObject
         catch (Exception ex) when (ex is UnauthorizedAccessException or DirectoryNotFoundException or IOException)
         {
             StatusText = $"无法读取目录：{ex.Message}";
+        }
+    }
+
+    /// <summary>回收站视图：枚举当前用户的回收站条目；FullPath 用 $R 路径（复制出去天然可用）。</summary>
+    private async Task LoadRecycleBinAsync(int generation)
+    {
+        StatusText = "正在读取回收站…";
+        try
+        {
+            var entries = await _recycleBin.EnumerateAsync();
+            if (generation != _searchGeneration || CurrentPath != SpecialLocations.RecycleBin)
+                return; // 期间已导航离开
+
+            var mapped = entries.Select(item => new FsEntry
+            {
+                Name = item.OriginalName,
+                FullPath = item.ItemPath,
+                IsDirectory = item.IsDirectory,
+                SizeBytes = item.IsDirectory ? null : item.SizeBytes,
+                ModifiedTime = item.DeletedTime,
+                BinEntry = item,
+            });
+            foreach (var entry in OrderEntries(mapped))
+                Entries.Add(entry);
+
+            StatusText = $"回收站：{Entries.Count} 个项目";
+        }
+        catch (Exception ex)
+        {
+            if (generation == _searchGeneration)
+                StatusText = $"无法读取回收站：{ex.Message}";
         }
     }
 

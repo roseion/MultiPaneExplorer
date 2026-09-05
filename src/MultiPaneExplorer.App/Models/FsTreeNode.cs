@@ -39,13 +39,15 @@ public partial class FsTreeNode : ObservableObject
 
     public static FsTreeNode Dummy { get; } = new(string.Empty, string.Empty, isDummy: true);
 
-    /// <summary>枚举真实子目录，替换占位节点；重复调用无效果。</summary>
+    /// <summary>枚举真实子目录，替换占位节点；重复调用无效果。特殊位置（回收站）没有子层。</summary>
     public void LoadChildren()
     {
         if (ChildrenLoaded)
             return;
         ChildrenLoaded = true;
         Children.Clear();
+        if (FullPath == SpecialLocations.RecycleBin)
+            return;
         foreach (var directory in EnumerateDirectoriesSafe(FullPath))
             Children.Add(new FsTreeNode(directory));
     }

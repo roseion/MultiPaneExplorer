@@ -132,6 +132,8 @@ public partial class ExplorerPane : UserControl
     {
         if (tab.CurrentPath is null)
             return "此电脑";
+        if (tab.CurrentPath == SpecialLocations.RecycleBin)
+            return "回收站";
         var name = Path.GetFileName(tab.CurrentPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         return string.IsNullOrEmpty(name) ? tab.CurrentPath : name;
     }
@@ -420,7 +422,7 @@ public partial class ExplorerPane : UserControl
 
         void SetHeader(GridViewColumn column, string tag)
         {
-            var title = SortHeaderTitles[tag];
+            var title = tag == "Modified" && Vm.IsRecycleBinView ? "删除时间" : SortHeaderTitles[tag];
             if (string.Equals(Vm.SortColumn, tag, StringComparison.Ordinal))
                 title += Vm.SortDescending ? " ▼" : " ▲";
             column.Header = title;
@@ -548,7 +550,7 @@ public partial class ExplorerPane : UserControl
 
     private void EntryList_DragOver(object sender, DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent(DataFormats.FileDrop) || Vm.CurrentPath is null)
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop) || Vm.CurrentPath is null || Vm.IsRecycleBinView)
         {
             _pendingDropEffect = DragDropEffects.None;
             e.Effects = DragDropEffects.None;

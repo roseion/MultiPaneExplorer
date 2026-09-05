@@ -12,6 +12,9 @@ public sealed class FsEntry
     public long? SizeBytes { get; init; }
     public DateTime ModifiedTime { get; init; }
 
+    /// <summary>回收站视图条目对应的元数据；普通文件系统条目为 null。</summary>
+    public FileOps.Core.RecycleBinEntry? BinEntry { get; init; }
+
     /// <summary>类型图标（按扩展名缓存，冻结可跨线程）。</summary>
     public ImageSource? Icon => FileIconCache.Get(this);
 
