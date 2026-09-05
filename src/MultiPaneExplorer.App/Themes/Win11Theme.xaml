@@ -302,10 +302,10 @@
         </Setter>
     </Style>
 
-    <!-- ============ ScrollBar（W11 细圆角滚动条，无箭头，6px） ============ -->
+    <!-- ============ ScrollBar（W11 风格：透明轨道 + 细圆角胶囊滑块贴边，悬停/拖动时加粗加深） ============ -->
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Width" Value="6"/>
+        <Setter Property="Width" Value="10"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -315,7 +315,17 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="#A6A6A6" CornerRadius="3" Margin="1"/>
+                                            <Border x:Name="Pill" Width="4" CornerRadius="2"
+                                                    Background="#C8C8C8" HorizontalAlignment="Right" Margin="0,0,1,0"/>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ScrollBar}}" Value="True">
+                                                    <Setter TargetName="Pill" Property="Width" Value="8"/>
+                                                    <Setter TargetName="Pill" Property="Background" Value="#8A8A8A"/>
+                                                </DataTrigger>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="Pill" Property="Background" Value="#6E6E6E"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -328,7 +338,7 @@
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Horizontal">
                 <Setter Property="Width" Value="Auto"/>
-                <Setter Property="Height" Value="6"/>
+                <Setter Property="Height" Value="10"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ScrollBar">
@@ -338,7 +348,17 @@
                                         <Thumb>
                                             <Thumb.Template>
                                                 <ControlTemplate TargetType="Thumb">
-                                                    <Border Background="#A6A6A6" CornerRadius="3" Margin="1"/>
+                                                    <Border x:Name="Pill" Height="4" CornerRadius="2"
+                                                            Background="#C8C8C8" VerticalAlignment="Bottom" Margin="0,0,0,1"/>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ScrollBar}}" Value="True">
+                                                            <Setter TargetName="Pill" Property="Height" Value="8"/>
+                                                            <Setter TargetName="Pill" Property="Background" Value="#8A8A8A"/>
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="Pill" Property="Background" Value="#6E6E6E"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
                                                 </ControlTemplate>
                                             </Thumb.Template>
                                         </Thumb>
