@@ -69,8 +69,13 @@ public partial class MainWindow : Window
 
         if (_visiblePaneCount <= 3)
         {
-            for (var i = 0; i < _visiblePaneCount; i++)
-                PaneGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            // n 个窗格需要 2n-1 列：窗格占偶数列（等分剩余空间），分隔条占奇数列（Auto，固定 6px）
+            for (var i = 0; i < _visiblePaneCount * 2 - 1; i++)
+            {
+                PaneGrid.ColumnDefinitions.Add(i % 2 == 0
+                    ? new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                    : new ColumnDefinition { Width = GridLength.Auto });
+            }
 
             for (var i = 0; i < _visiblePaneCount; i++)
             {
