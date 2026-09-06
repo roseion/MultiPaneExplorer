@@ -24,6 +24,9 @@ public partial class ExplorerPane : UserControl
     private bool _initialized;
     private bool _revealing;
     private bool _addressEditing;
+    private bool _tabDragArmed;
+    private int? _tabDragSourceIndex;
+    private Point _tabDragStartPosition;
     private Point _dragStartPosition;
     private bool _dragArmed;
     private DragDropEffects _pendingDropEffect;
@@ -266,8 +269,64 @@ public partial class ExplorerPane : UserControl
                     mouse.Handled = true;
                 }
             };
+
+            // 拖拽重排：先武装，MouseMove 超过阈值才启动 DragDrop（避免吞掉普通点击）
+            tabButton.AllowDrop = true;
+            tabButton.PreviewMouseLeftButtonDown += (_, down) =>
+            {
+                _tabDragArmed = true;
+                _tabDragStartPosition = down.GetPosition(tabButton);
+            };
+            tabButton.PreviewMouseMove += (_, move) =>
+            {
+                if (!_tabDragArmed || move.LeftButton != MouseButtonState.Pressed)
+                {
+                    _tabDragArmed = false;
+                    return;
+                }
+                var position = move.GetPosition(tabButton);
+                if (Math.Abs(position.X - _tabDragStartPosition.X) < SystemParameters.MinimumHorizontalDragDistance
+                    && Math.Abs(position.Y - _tabDragStartPosition.Y) < SystemParameters.MinimumVerticalDragDistance)
+                {
+                    return;
+                }
+                _tabDragArmed = false;
+                _tabDragSourceIndex = index;
+                var data = new DataObject("pane-tab-index", index);
+                _ = DragDrop.DoDragDrop(tabButton, data, DragDropEffects.Move);
+            };
+            tabButton.DragOver += (_, over) =>
+            {
+                over.Effects = _tabDragSourceIndex is { } source && source != index
+                    ? DragDropEffects.Move
+                    : DragDropEffects.None;
+                over.Handled = true;
+            };
+            tabButton.Drop += (_, drop) =>
+            {
+                if (_tabDragSourceIndex is { } source)
+                    MoveTab(source, index);
+                _tabDragSourceIndex = null;
+                drop.Handled = true;
+            };
             TabStrip.Children.Add(tabButton);
         }
+    }
+
+    private void MoveTab(int from, int to)
+    {
+        if (from == to || from < 0 || to < 0 || from >= _tabs.Count || to >= _tabs.Count)
+            return;
+        var tab = _tabs[from];
+        _tabs.RemoveAt(from);
+        _tabs.Insert(to, tab);
+        if (_activeTabIndex == from)
+            _activeTabIndex = to;
+        else if (from < _activeTabIndex && to >= _activeTabIndex)
+            _activeTabIndex--;
+        else if (from > _activeTabIndex && to <= _activeTabIndex)
+            _activeTabIndex++;
+        RefreshTabStrip();
     }
 
     /// <summary>对所有标签页执行同一操作（如全局设置下发）。</summary>
