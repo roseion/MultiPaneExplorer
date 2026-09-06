@@ -332,8 +332,8 @@
                                   InputGestureText="Ctrl+Shift+C"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.CopyPathCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                        <!-- 分割线与相邻菜单组同视图：组整组隐藏时分割线一起隐藏，避免双线/悬空线 -->
-                        <Separator Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
+                        <!-- 剪贴板组与回收站组之间无需分割线：剪贴板组在回收站视图整组隐藏，
+                             此处保留分割线会产生普通视图双线、回收站视图顶部悬空线 -->
                         <MenuItem Header="还原"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.RestoreSelectedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
