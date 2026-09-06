@@ -109,10 +109,10 @@
                            Foreground="{StaticResource W11.TextSecondary}"/>
             </DockPanel>
         </Border>
-        <!-- 全局预览栏：跟随最近聚焦窗格的选中项（分隔条在其左侧，可拖宽） -->
+        <!-- 全局预览栏（白底）：跟随最近聚焦窗格的选中项（分隔条在其左侧，可拖宽） -->
         <Border x:Name="PreviewBorder" DockPanel.Dock="Right" Width="260" MinWidth="180" MaxWidth="480"
-                Background="{StaticResource W11.WindowBackground}"
-                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1,0,0,0"
+                Background="{StaticResource W11.CardBackground}"
+                BorderBrush="{StaticResource W11.Divider}" BorderThickness="1,0,0,0"
                 Visibility="Collapsed">
             <controls:PreviewPane x:Name="Preview"/>
         </Border>
