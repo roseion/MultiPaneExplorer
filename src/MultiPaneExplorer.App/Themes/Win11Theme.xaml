@@ -3,60 +3,61 @@
 
     <!--
     ============================================================
-    设计系统 v2 —— 依据 design-system/multipane-explorer/MASTER.md
-    风格：Flat + 微交互 / Swiss 极简 / Soft UI 进化（三层表面 + 发丝线）
-    规则：组件内禁止硬编码 hex，一律引用 W11.* 语义化画刷
+    设计系统 v3 —— Windows 11 原生 Fluent 2（依据本地 skill win11-fluent-design，
+    规则源自 microsoft/microsoft-ui-reactor skills/design.md 与 WinUI 3 主题值）
+    要点：中性灰 Mica 窗底、白色内容卡浮层、控件 4px/浮层 8px 圆角、
+    四态成套的主题画刷、组件内禁止裸 hex
     ============================================================
     -->
 
-    <!-- ============ 强调色（Windows 蓝相，WinUI3 端值） ============ -->
-    <Color x:Key="AccentColor">#FF0F6CBD</Color>
-    <SolidColorBrush x:Key="W11.Accent" Color="#0F6CBD"/>
-    <SolidColorBrush x:Key="W11.AccentHover" Color="#115EA3"/>
-    <SolidColorBrush x:Key="W11.AccentPressed" Color="#0C3B5E"/>
-    <SolidColorBrush x:Key="W11.AccentTint" Color="#EAF3FC"/>
+    <!-- ============ 强调色（WinUI 3 浅色系统蓝） ============ -->
+    <Color x:Key="AccentColor">#FF0067C0</Color>
+    <SolidColorBrush x:Key="W11.Accent" Color="#0067C0"/>
+    <SolidColorBrush x:Key="W11.AccentHover" Color="#1975C5"/>
+    <SolidColorBrush x:Key="W11.AccentPressed" Color="#3183CD"/>
+    <SolidColorBrush x:Key="W11.AccentTint" Color="#E8F2FB"/>
 
-    <!-- ============ 表面（窗底 → 工具层 → 卡片三层） ============ -->
-    <SolidColorBrush x:Key="W11.WindowBackground" Color="#F2F4F8"/>
-    <SolidColorBrush x:Key="W11.LayerBackground" Color="#F7F9FC"/>
+    <!-- ============ 表面（Mica 中性灰 + 白卡） ============ -->
+    <SolidColorBrush x:Key="W11.WindowBackground" Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="W11.LayerBackground" Color="#F3F3F3"/>
     <SolidColorBrush x:Key="W11.CardBackground" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="W11.SubtleBackground" Color="#EDF1F6"/>
-    <SolidColorBrush x:Key="W11.HoverBackground" Color="#E6ECF4"/>
-    <SolidColorBrush x:Key="W11.PressedBackground" Color="#DCE4EF"/>
-    <SolidColorBrush x:Key="W11.DisabledBackground" Color="#EFF2F6"/>
+    <SolidColorBrush x:Key="W11.SubtleBackground" Color="#F7F7F7"/>
+    <SolidColorBrush x:Key="W11.HoverBackground" Color="#E9E9E9"/>
+    <SolidColorBrush x:Key="W11.PressedBackground" Color="#DEDEDE"/>
+    <SolidColorBrush x:Key="W11.DisabledBackground" Color="#FAFAFA"/>
 
-    <!-- ============ 选中/悬停（带强调色倾向） ============ -->
-    <SolidColorBrush x:Key="W11.SelectionBackground" Color="#CFE4FA"/>
-    <SolidColorBrush x:Key="W11.RowHover" Color="#ECF3FB"/>
+    <!-- ============ 选中/悬停（资源管理器行为：行悬停淡蓝、选中 #CCE4F7） ============ -->
+    <SolidColorBrush x:Key="W11.SelectionBackground" Color="#CCE4F7"/>
+    <SolidColorBrush x:Key="W11.RowHover" Color="#E8F2FB"/>
 
-    <!-- ============ 线与分隔（三级） ============ -->
-    <SolidColorBrush x:Key="W11.CardBorder" Color="#E4E9F0"/>
-    <SolidColorBrush x:Key="W11.ControlBorder" Color="#D6DDE7"/>
-    <SolidColorBrush x:Key="W11.ControlBorderHover" Color="#C3CDDC"/>
-    <SolidColorBrush x:Key="W11.ControlBorderPressed" Color="#A9B7CB"/>
-    <SolidColorBrush x:Key="W11.Divider" Color="#E7EBF1"/>
-    <SolidColorBrush x:Key="W11.Splitter" Color="#E7EBF1"/>
+    <!-- ============ 线与分隔 ============ -->
+    <SolidColorBrush x:Key="W11.CardBorder" Color="#EDEDED"/>
+    <SolidColorBrush x:Key="W11.ControlBorder" Color="#E1E1E1"/>
+    <SolidColorBrush x:Key="W11.ControlBorderHover" Color="#D6D6D6"/>
+    <SolidColorBrush x:Key="W11.ControlBorderPressed" Color="#C9C9C9"/>
+    <SolidColorBrush x:Key="W11.Divider" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="W11.Splitter" Color="#E5E5E5"/>
 
-    <!-- ============ 文字（冷灰四档） ============ -->
-    <SolidColorBrush x:Key="W11.TextPrimary" Color="#171D29"/>
-    <SolidColorBrush x:Key="W11.TextSecondary" Color="#5B6675"/>
-    <SolidColorBrush x:Key="W11.TextTertiary" Color="#8C96A6"/>
-    <SolidColorBrush x:Key="W11.TextDisabled" Color="#AEB6C2"/>
+    <!-- ============ 文字（Fluent 中性四档） ============ -->
+    <SolidColorBrush x:Key="W11.TextPrimary" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="W11.TextSecondary" Color="#5D5D5D"/>
+    <SolidColorBrush x:Key="W11.TextTertiary" Color="#8A8A8A"/>
+    <SolidColorBrush x:Key="W11.TextDisabled" Color="#A3A3A3"/>
 
     <!-- ============ 功能色 / 深色元素 ============ -->
-    <SolidColorBrush x:Key="W11.DangerBrush" Color="#D13438"/>
-    <SolidColorBrush x:Key="W11.DangerPressed" Color="#B8252B"/>
-    <SolidColorBrush x:Key="W11.SuccessBrush" Color="#0E8345"/>
-    <SolidColorBrush x:Key="W11.WarningBrush" Color="#B54708"/>
-    <SolidColorBrush x:Key="W11.MenuBackground" Color="#FBFCFE"/>
-    <SolidColorBrush x:Key="W11.ScrollBarIdle" Color="#BCC5D2"/>
-    <SolidColorBrush x:Key="W11.ScrollBarHover" Color="#97A2B3"/>
-    <SolidColorBrush x:Key="W11.ScrollBarDrag" Color="#6F7B8D"/>
-    <SolidColorBrush x:Key="W11.TooltipBackground" Color="#26323F"/>
+    <SolidColorBrush x:Key="W11.DangerBrush" Color="#C42B1C"/>
+    <SolidColorBrush x:Key="W11.DangerPressed" Color="#A82A22"/>
+    <SolidColorBrush x:Key="W11.SuccessBrush" Color="#0F7B0F"/>
+    <SolidColorBrush x:Key="W11.WarningBrush" Color="#9D5D00"/>
+    <SolidColorBrush x:Key="W11.MenuBackground" Color="#F9F9F9"/>
+    <SolidColorBrush x:Key="W11.ScrollBarIdle" Color="#C8C8C8"/>
+    <SolidColorBrush x:Key="W11.ScrollBarHover" Color="#8A8A8A"/>
+    <SolidColorBrush x:Key="W11.ScrollBarDrag" Color="#6E6E6E"/>
+    <SolidColorBrush x:Key="W11.TooltipBackground" Color="#262626"/>
 
     <!-- 列表/树选中色（全局系统键覆盖，让 TreeView 默认模板也跟随） -->
-    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#CFE4FA"/>
-    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#171D29"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#CCE4F7"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A1A1A"/>
 
     <!-- ============ 字体 ============ -->
     <Style TargetType="Window">
@@ -69,13 +70,13 @@
         <Setter Property="FontSize" Value="13"/>
     </Style>
 
-    <!-- ============ 标准 Button（白底 + 发丝线，悬停边框加深） ============ -->
+    <!-- ============ 标准 Button（WinUI 控件填充/描边四态） ============ -->
     <Style TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource W11.CardBackground}"/>
+        <Setter Property="Background" Value="#FBFBFB"/>
         <Setter Property="BorderBrush" Value="{StaticResource W11.ControlBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
-        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Padding" Value="12,5"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -95,17 +96,18 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="#F9F9F9"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.ControlBorderHover}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.PressedBackground}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="#F1F1F1"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.ControlBorderPressed}"/>
+                            <Setter Property="Foreground" Value="{StaticResource W11.TextSecondary}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource W11.TextDisabled}"/>
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DisabledBackground}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.CardBorder}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#F0F0F0"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -140,7 +142,7 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource W11.TextDisabled}"/>
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DisabledBackground}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.CardBorder}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.ControlBorder}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -148,7 +150,7 @@
         </Setter>
     </Style>
 
-    <!-- 工具栏图标按钮：无边框透明底，悬停 Subtle / 按下 Pressed -->
+    <!-- 工具栏图标按钮：无边框透明底，悬停中性浅灰（WinUI SubtleFill） -->
     <Style x:Key="W11.IconButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -181,7 +183,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ ToggleButton（开关/预览钮；选中 = 强调色微底 + 主色文字） ============ -->
+    <!-- ============ ToggleButton（开关/预览钮；选中 = 强调淡蓝底 + 主色字） ============ -->
     <Style TargetType="ToggleButton">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
@@ -202,8 +204,8 @@
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.AccentTint}"/>
-                            <Setter Property="Foreground" Value="{StaticResource W11.Accent}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                            <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource W11.TextDisabled}"/>
@@ -214,37 +216,41 @@
         </Setter>
     </Style>
 
-    <!-- ============ TextBox（白底发丝线，聚焦强调边 + 微染底） ============ -->
+    <!-- ============ TextBox（白底；聚焦 = 灰边保持 + 底部 2px 强调线，Win11 招牌式） ============ -->
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource W11.CardBackground}"/>
         <Setter Property="BorderBrush" Value="{StaticResource W11.ControlBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
-        <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="Padding" Value="8,4"/>
         <Setter Property="SelectionBrush" Value="{StaticResource W11.Accent}"/>
         <Setter Property="CaretBrush" Value="{StaticResource W11.TextPrimary}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
-                    <Border x:Name="Bd"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="4"
-                            SnapsToDevicePixels="True">
-                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
-                    </Border>
+                    <Grid>
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border x:Name="FocusUnderline" Height="2" Margin="2,0,2,1" VerticalAlignment="Bottom"
+                                Background="{StaticResource W11.Accent}" CornerRadius="1" Visibility="Collapsed"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.ControlBorderHover}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.Accent}"/>
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.AccentTint}"/>
+                            <Setter TargetName="FocusUnderline" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource W11.TextDisabled}"/>
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DisabledBackground}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#F0F0F0"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -265,11 +271,11 @@
                                 Background="{StaticResource W11.CardBackground}"
                                 BorderBrush="{StaticResource W11.ControlBorderHover}"
                                 BorderThickness="1" VerticalAlignment="Center">
-                            <TextBlock x:Name="Check" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                            <TextBlock x:Name="Check" Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe Fluent Icons, Segoe MDL2 Assets"
                                        FontSize="10" Foreground="White" HorizontalAlignment="Center"
                                        VerticalAlignment="Center" Visibility="Collapsed"/>
                         </Border>
-                        <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"
+                        <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
                                           RecognizesAccessKey="True"/>
                     </StackPanel>
                     <ControlTemplate.Triggers>
@@ -302,7 +308,7 @@
                             <Ellipse x:Name="Dot" Width="7" Height="7" Fill="{StaticResource W11.Accent}"
                                      Visibility="Collapsed"/>
                         </Border>
-                        <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"
+                        <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
                                           RecognizesAccessKey="True"/>
                     </StackPanel>
                     <ControlTemplate.Triggers>
@@ -320,7 +326,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ ToolTip（深色气泡） ============ -->
+    <!-- ============ ToolTip（深色气泡，浮层 8px 圆角） ============ -->
     <Style TargetType="ToolTip">
         <Setter Property="Background" Value="{StaticResource W11.TooltipBackground}"/>
         <Setter Property="Foreground" Value="#FFFFFF"/>
@@ -328,7 +334,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="8,5">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="8,5">
                         <ContentPresenter/>
                     </Border>
                 </ControlTemplate>
@@ -336,7 +342,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ ContextMenu（8px 圆角 + 柔影） ============ -->
+    <!-- ============ ContextMenu（亚克力浅底 + 8px 浮层圆角 + 柔影） ============ -->
     <Style TargetType="ContextMenu">
         <Setter Property="Template">
             <Setter.Value>
@@ -346,7 +352,7 @@
                             BorderThickness="1" CornerRadius="8" Padding="4"
                             SnapsToDevicePixels="True">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="18" ShadowDepth="2" Direction="270" Opacity="0.16"/>
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.18"/>
                         </Border.Effect>
                         <StackPanel IsItemsHost="True"/>
                     </Border>
@@ -379,7 +385,7 @@
                                         BorderBrush="{StaticResource W11.ControlBorder}"
                                         BorderThickness="1" CornerRadius="8" Padding="4">
                                     <Border.Effect>
-                                        <DropShadowEffect BlurRadius="18" ShadowDepth="2" Direction="270" Opacity="0.16"/>
+                                        <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.18"/>
                                     </Border.Effect>
                                     <StackPanel IsItemsHost="True"/>
                                 </Border>
@@ -388,7 +394,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -409,7 +415,7 @@
     <!-- ============ ScrollBar（透明轨道 + 细圆角胶囊贴边，悬停/拖动加粗加深） ============ -->
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Width" Value="10"/>
+        <Setter Property="Width" Value="12"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -443,7 +449,7 @@
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Horizontal">
                 <Setter Property="Width" Value="Auto"/>
-                <Setter Property="Height" Value="10"/>
+                <Setter Property="Height" Value="12"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ScrollBar">
@@ -478,13 +484,13 @@
         </Style.Triggers>
     </Style>
 
-    <!-- ============ TreeView（透明底融入窗格） ============ -->
+    <!-- ============ TreeView（透明底融入 Mica） ============ -->
     <Style TargetType="TreeView">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
 
-    <!-- ============ ComboBox（白底发丝线，聚焦强调边；展开面板柔影） ============ -->
+    <!-- ============ ComboBoxItem（浮层内条目） ============ -->
     <Style TargetType="ComboBoxItem">
         <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
         <Setter Property="Template">
@@ -495,7 +501,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
@@ -506,9 +512,10 @@
         </Setter>
     </Style>
 
+    <!-- ============ ComboBox（WinUI 控件填充；展开浮层亚克力底柔影） ============ -->
     <Style TargetType="ComboBox">
         <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
-        <Setter Property="Background" Value="{StaticResource W11.CardBackground}"/>
+        <Setter Property="Background" Value="#FBFBFB"/>
         <Setter Property="BorderBrush" Value="{StaticResource W11.ControlBorder}"/>
         <Setter Property="Padding" Value="8,4"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -525,7 +532,7 @@
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border Background="Transparent">
-                                        <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                        <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons, Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"
                                                    Foreground="{StaticResource W11.TextSecondary}"
                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
                                                    Margin="0,0,8,0"/>
@@ -545,7 +552,7 @@
                                     BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
                                     CornerRadius="8" Padding="2" MaxHeight="260">
                                 <Border.Effect>
-                                    <DropShadowEffect BlurRadius="18" ShadowDepth="2" Direction="270" Opacity="0.16"/>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.18"/>
                                 </Border.Effect>
                                 <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Auto">
                                     <StackPanel IsItemsHost="True"/>
@@ -555,15 +562,17 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#F9F9F9"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.ControlBorderHover}"/>
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.Accent}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.CardBackground}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource W11.ControlBorder}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{StaticResource W11.TextDisabled}"/>
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DisabledBackground}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#F0F0F0"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

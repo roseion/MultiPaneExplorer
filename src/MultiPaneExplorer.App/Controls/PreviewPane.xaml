@@ -4,7 +4,7 @@
     <Grid>
         <!-- 空态 -->
         <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="&#xE8A9;" FontFamily="Segoe MDL2 Assets" FontSize="42"
+            <TextBlock Text="&#xE8A9;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="42"
                        HorizontalAlignment="Center" Foreground="{StaticResource W11.TextTertiary}"/>
             <TextBlock Text="选择要预览的项目" HorizontalAlignment="Center" Margin="0,8,0,0"
                        Foreground="{StaticResource W11.TextSecondary}"/>

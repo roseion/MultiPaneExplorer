@@ -1,73 +1,65 @@
-# MASTER — 多栏资源管理器设计系统（v2 重设计）
+# MASTER — 多栏资源管理器设计系统（v3 · Windows 11 原生 Fluent）
 
-> 依据 ui-ux-pro-max（github.com/nextlevelbuilder/ui-ux-pro-max-skill，125k★）方法论生成。
-> 检索方式说明：本机无可用 Python 3，无法运行 skill 的 search.py，改为直接检索其数据文件
-> （products.csv / styles.csv / colors.csv / typography.csv / stacks/wpf.csv）——属 skill 规定的
-> fallback 路径，本档所有结论均来自上述数据文件的命中结果。
+> **v3 修订（2026-09-06，用户验收否决 v2 后）**：v2 的冷蓝灰阶偏离原生质感，本版依据微软官方规则
+> 重订——来源：microsoft/microsoft-ui-reactor `skills/design.md`（已编译为本地 skill
+> `win11-fluent-design`）+ WinUI 3 浅色主题标准值 + Windows 11 资源管理器实机解剖。
+> 检索方式说明：本机无可用 Python 3，ui-ux-pro-max 的 search.py 不可运行，数据来自其 CSV 直查；
+> Fluent 规则来自微软官方仓库抓取。
+
+## 0. v3 铁律（对 v2 的纠偏）
+
+1. **中性灰，无色相**：Mica 窗底 #F3F3F3、描边 #E1E1E1、文字 #1A1A1A——禁止冷蓝调灰阶（v2 之误）。
+2. **Explorer 解剖**：标题栏/工具栏/标签条/状态栏同为 Mica 一整块（无分隔线）；文件内容区是
+   **浮在 Mica 上的白色圆角卡**（顶部 8px 圆角、四周留 4px Mica 边、发丝描边）；文件树直接坐在 Mica 上。
+3. **圆角两档**：控件 4px、浮层（菜单/气泡/ComboBox 弹层）8px，禁 6px 等非标值。
+4. **行内交互**：悬停淡蓝 #E8F2FB、选中 #CCE4F7（强调色 Light3），不加左缘指示条等非原生装饰。
+5. **四态成套**：rest/hover/pressed/disabled 全部经 W11.* 画刷切换，组件内禁裸 hex。
+6. **图标**：`Segoe Fluent Icons, Segoe MDL2 Assets` 字体栈；**栅格**：4px 倍数。
 
 ## 1. 产品定位（Step 1 分析）
 
 - 产品类型：桌面生产力工具（多栏文件管理器，Windows 11 平台）
-- 数据命中：`products.csv` #16 Productivity Tool → 主风格 **Flat Design + Micro-interactions**，
-  辅助 **Minimalism & Swiss Style** + **Soft UI Evolution**；关键词"Clear hierarchy + functional
-  colors, Ease of use, Speed & efficiency"
-- Stack：`stacks/wpf.csv`（skill 原生支持）——XAML 声明式样式、资源字典主题化
-- 宿主一致性约束：文件管理器品类在 Windows 上与 Explorer 同心智，主强调色保持蓝色系
-  （对照 colors.csv 命中的"语义化功能色"原则重新平衡，而非换色相）
+- ui-ux-pro-max 数据命中：products #16 Productivity Tool → Flat + 微交互，层级清晰 + 功能色
+- 品类一致性：文件管理器与 Explorer 同心智 → 直接采用 Windows 11 Fluent 原生视觉语言
 
-## 2. 风格裁定
+## 2. 色彩 Token（全部进 W11.*；值 = Fluent 2 浅色标准）
 
-| 维度 | 裁定 | 来源 |
-|------|------|------|
-| 骨架 | Flat + 微交互（悬停/按下 120ms 级过渡感） | products #16 主风格 |
-| 层次 | 三层表面：窗底 → 工具层 → 卡片白，配柔和投影 | Soft UI Evolution（styles #19） |
-| 几何 | 控件 4px / 容器 8px 圆角；1px 冷灰发丝线代替中灰硬边 | Minimalism & Swiss（styles #1） |
-| 密度 | 工具型中高密度：行高紧凑、4px 间距栅格 | products #16 "efficiency focus" |
-| 文字 | Segoe UI Variable 13px 基准 + 11/12/13/14/16 层级，Secondary 辅助文字 | typography #5/#13（中性 UI 无衬线映射到平台字体） |
+### 强调色
+- `Accent` #0067C0 / `AccentHover` #1975C5 / `AccentPressed` #3183CD / `AccentTint` #E8F2FB
+- `SelectionBackground` #CCE4F7（行选中）/ `RowHover` #E8F2FB（行悬停）
 
-## 3. 色彩 Token（语义化，全部进 W11.* 资源；禁止组件内裸 hex）
+### 表面（Mica 中性）
+- `WindowBackground` = `LayerBackground` = #F3F3F3（Mica 一体）
+- `CardBackground` #FFFFFF（内容卡/输入/激活标签）
+- `SubtleBackground` #F7F7F7 / `HoverBackground` #E9E9E9 / `PressedBackground` #DEDEDE
+- `DisabledBackground` #FAFAFA（配 #F0F0F0 描边）
 
-### 强调色（保留 Windows 蓝相，按 WinUI3 端值重校）
-- `Accent` #0F6CBD / `AccentHover` #115EA3 / `AccentPressed` #0C3B5E
-- `AccentTint` #EAF3FC（强调色微底）
-- `SelectionBackground` #CFE4FA（选中底）+ 行左缘 3px Accent 指示条
-- `RowHover` #ECF3FB（强调色染悬停，替代纯灰悬停）
+### 线
+- `CardBorder` #EDEDED（内容卡发丝）/ `ControlBorder` #E1E1E1 / hover #D6D6D6 / pressed #C9C9C9
+- `Divider` = `Splitter` = #E5E5E5
 
-### 表面（三层 + 悬停态，冷中性）
-- `WindowBackground` #F2F4F8（窗底/槽位）
-- `LayerBackground` #F7F9FC（标题栏/工具栏/状态栏层）
-- `CardBackground` #FFFFFF（输入框/列表面/卡片/激活标签）
-- `SubtleBackground` #EDF1F6 / `HoverBackground` #E6ECF4 / `PressedBackground` #DCE4EF
-- `DisabledBackground` #EFF2F6
-
-### 线与分隔
-- `CardBorder` #E4E9F0（卡片发丝线）/ `ControlBorder` #D6DDE7（控件边）
-- `ControlBorderHover` #C3CDDC / `ControlBorderPressed` #A9B7CB
-- `Divider` #E7EBF1（分隔线/分隔条，替代 #E5E5E5 硬线）
-
-### 文字（冷灰阶 4 档）
-- `TextPrimary` #171D29 / `TextSecondary` #5B6675
-- `TextTertiary` #8C96A6 / `TextDisabled` #AEB6C2
+### 文字
+- `TextPrimary` #1A1A1A / `TextSecondary` #5D5D5D / `TextTertiary` #8A8A8A / `TextDisabled` #A3A3A3
 
 ### 功能色与深色元素
-- `DangerBrush` #D13438（关闭钮/危险操作）/ `SuccessBrush` #0E8345 / `WarningBrush` #B54708
-- ToolTip 深色气泡 #26323F / 菜单底 `MenuBackground` #FBFCFE + 8px 圆角 + 柔影
-- 滚动条胶囊 #BCC5D2 → 悬停 #97A2B3 → 拖动 #6F7B8D
+- `DangerBrush` #C42B1C（关闭钮悬停）/ pressed #A82A22 · `SuccessBrush` #0F7B0F · `WarningBrush` #9D5D00
+- `MenuBackground` #F9F9F9（浮层亚克力近似）· ToolTip #262626
+- 滚动条 #C8C8C8 → 悬停 #8A8A8A → 拖动 #6E6E6E
 
-## 4. 组件细则
+## 3. 组件细则
 
-- 标准 Button：白底 + 发丝线 + 4px 圆角，悬停微亮边框加深；禁用降透明
-- `W11.IconButton`（新增）：工具栏无边框图标钮，透明底、悬停 Subtle、按下 Pressed
-- `W11.AccentButton`（新增）：主操作实心 Accent 底白字，用于对话框主决策（如冲突"替换"）
-- 列表行：悬停 RowHover、选中 Selection + 左缘指示条；行圆角 4
-- 标签页（窗格内）：激活 = Card 白底 + 发丝线 + 6px 圆角；非激活透明，悬停 Subtle
-- 标题栏：LayerBackground + Divider 发丝底线，关闭钮悬停 DangerBrush 白字
-- 地址栏/输入：白底发丝线，聚焦 Accent 边 + AccentTint 微底
-- 分隔条：Divider 色、悬停时 AccentTint 反馈
+- 标准 Button：#FBFBFB 底 + #E1E1E1 边 + 4px 圆角，hover #F9F9F9/#D6D6D6，pressed #F1F1F1/#C9C9C9
+- `W11.IconButton`：工具栏无边框透明钮，hover #E9E9E9 / pressed #DEDEDE
+- `W11.AccentButton`：实心强调底白字（对话框主决策）
+- TextBox：白底灰边；**聚焦 = 灰边保持 + 底部 2px 强调线**（Win11 招牌式）
+- 标题栏与工具栏：同层 Mica、无分隔线；关闭钮悬停 #C42B1C 白字
+- 列表行：4px 圆角、悬停 #E8F2FB、选中 #CCE4F7，无左缘装饰条
+- 内容卡（DropZone）：Margin 4,2,4,0 / 顶部 8px 圆角 / #EDEDED 发丝边 / 内衬 2px
+- 文件树：透明坐 Mica，左上留 4px 边
 
-## 5. 反模式（避免）
+## 4. 反模式（禁止）
 
-- 组件内硬编码 hex（本次重构后为硬约束）
-- 多种灰阶边框混用（一律 Card/Control/Divider 三级）
-- 纯灰悬停选中（选中/悬停必须带强调色倾向）
-- 0ms 状态切换 / 无悬停反馈的可点击元素
+- 冷蓝调灰阶（v2 之误）；组件内裸 hex；6px 等非标圆角
+- 标题栏/工具栏横加分隔线（Mica 一体，靠白卡的边缘分层）
+- 行左缘强调条等 Explorer 没有的装饰
+- 只定义 rest 态的交互元素

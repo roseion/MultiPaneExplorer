@@ -1259,11 +1259,11 @@ public partial class ExplorerPane : UserControl
     }
 
     private void EntryList_DragLeave(object sender, DragEventArgs e) =>
-        DropZone.BorderBrush = Brushes.Transparent;
+        DropZone.BorderBrush = System.Windows.Application.Current?.TryFindResource("W11.CardBorder") as System.Windows.Media.Brush ?? Brushes.Transparent;
 
     private void EntryList_Drop(object sender, DragEventArgs e)
     {
-        DropZone.BorderBrush = Brushes.Transparent;
+        DropZone.BorderBrush = System.Windows.Application.Current?.TryFindResource("W11.CardBorder") as System.Windows.Media.Brush ?? Brushes.Transparent;
         // Drop 事件的 e.Effects 不保证携带最后一次 DragOver 的结果，用自己记录的值
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } paths)
             _ = Vm.PastePathsAsync(paths, move: _pendingDropEffect.HasFlag(DragDropEffects.Move));

@@ -19,7 +19,7 @@
             <Setter Property="Width" Value="40"/>
             <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
             <Setter Property="FontSize" Value="10"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -65,9 +65,8 @@
         </Style>
     </Window.Resources>
     <DockPanel x:Name="RootPanel">
-        <!-- 合并后的标题栏：左侧应用名+空白区拖窗口，中部工具栏，右侧自绘窗口按钮 -->
-        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="36" Background="{StaticResource W11.LayerBackground}"
-                BorderBrush="{StaticResource W11.Divider}" BorderThickness="0,0,0,1">
+        <!-- 合并后的标题栏：左侧应用名+空白区拖窗口，中部工具栏，右侧自绘窗口按钮（与工具栏同层 Mica，无分隔线） -->
+        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="36" Background="{StaticResource W11.LayerBackground}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
@@ -109,12 +108,12 @@
                               shell:WindowChrome.IsHitTestVisibleInChrome="True"
                               Checked="HiddenFiles_Changed" Unchecked="HiddenFiles_Changed"/>
                     <Button x:Name="UndoButton" Content="&#xE7A7;" Width="30" Height="24" Margin="16,0,0,0"
-                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe MDL2 Assets" IsEnabled="False"
+                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" IsEnabled="False"
                             ToolTip="撤销 (Ctrl+Z)"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="UndoButton_Click"/>
                     <Button x:Name="RedoButton" Content="&#xE7A6;" Width="30" Height="24" Margin="4,0,0,0"
-                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe MDL2 Assets"
+                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                             ToolTip="重做 (Ctrl+Y)"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="RedoButton_Click"/>
@@ -126,7 +125,7 @@
                             Click="FavoritesButton_Click"/>
                     <ToggleButton x:Name="PreviewToggle" Content="&#xE723;" Width="30" Height="24"
                                   Margin="12,0,0,0" Padding="0" FontSize="14"
-                                  FontFamily="Segoe MDL2 Assets"
+                                  FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                   ToolTip="预览窗格 (Alt+P)"
                                   shell:WindowChrome.IsHitTestVisibleInChrome="True"
                                   Checked="PreviewToggle_Changed" Unchecked="PreviewToggle_Changed"/>
