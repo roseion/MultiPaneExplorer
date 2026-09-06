@@ -36,9 +36,12 @@ public partial class ExplorerPane : UserControl
     private readonly List<PaneViewModel> _tabs = [];
     private int _activeTabIndex;
 
-    private static readonly Brush DropHintBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x67, 0xC0));
-    private static readonly Brush ActiveTabBrush = Brushes.White;
-    private static readonly Brush TabBorderBrush = new SolidColorBrush(Color.FromRgb(0xE1, 0xE1, 0xE1));
+    private static Brush DropHintBrush =>
+        System.Windows.Application.Current?.TryFindResource("W11.Accent") as Brush
+        ?? new SolidColorBrush(Color.FromRgb(0x0F, 0x6C, 0xBD));
+    private static Brush ActiveTabBrush =>
+        System.Windows.Application.Current?.TryFindResource("W11.CardBackground") as Brush
+        ?? Brushes.White;
 
     private static readonly Dictionary<string, string> SortHeaderTitles = new()
     {
@@ -240,7 +243,8 @@ public partial class ExplorerPane : UserControl
                 Padding = new Thickness(8, 2, 4, 2),
                 Margin = new Thickness(0, 0, 3, 0),
                 Background = i == _activeTabIndex ? ActiveTabBrush : Brushes.Transparent,
-                BorderBrush = TabBorderBrush,
+                // 无边框标签钮（与 W11.IconButton 同观感）：激活 = 卡片白底，非激活透明
+                Style = System.Windows.Application.Current?.TryFindResource("W11.IconButton") as Style,
             };
             tabButton.Click += (_, _) => SwitchTab(index);
             TabStrip.Children.Add(tabButton);
@@ -478,7 +482,7 @@ public partial class ExplorerPane : UserControl
                 Text = "›",
                 Margin = new Thickness(1, 0, 1, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = Brushes.Gray,
+                Foreground = System.Windows.Application.Current?.TryFindResource("W11.TextTertiary") as System.Windows.Media.Brush ?? Brushes.Gray,
             });
         }
 
@@ -584,9 +588,10 @@ public partial class ExplorerPane : UserControl
             PopupAnimation = System.Windows.Controls.Primitives.PopupAnimation.Fade,
             Child = new Border
             {
-                Background = Brushes.White,
-                BorderBrush = Brushes.Gray,
+                Background = System.Windows.Application.Current?.TryFindResource("W11.MenuBackground") as System.Windows.Media.Brush ?? Brushes.White,
+                BorderBrush = System.Windows.Application.Current?.TryFindResource("W11.ControlBorder") as System.Windows.Media.Brush ?? Brushes.Gray,
                 BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
                 Child = list,
             },
         };
@@ -1229,7 +1234,7 @@ public partial class ExplorerPane : UserControl
         {
             _pendingDropEffect = DragDropEffects.None;
             e.Effects = DragDropEffects.None;
-            DropZone.BorderBrush = Brushes.IndianRed;
+            DropZone.BorderBrush = System.Windows.Application.Current?.TryFindResource("W11.DangerBrush") as System.Windows.Media.Brush ?? Brushes.IndianRed;
             e.Handled = true;
             return;
         }

@@ -61,7 +61,7 @@
                     <ControlTemplate TargetType="GridViewColumnHeader">
                         <Grid>
                             <Border x:Name="Bd" Background="Transparent"
-                                    BorderBrush="{StaticResource W11.ControlBorder}"
+                                    BorderBrush="{StaticResource W11.Divider}"
                                     BorderThickness="0,0,1,1" Padding="6,4">
                                 <TextBlock Text="{TemplateBinding Content}" VerticalAlignment="Center"
                                            FontSize="12" Foreground="{StaticResource W11.TextPrimary}"/>
@@ -83,20 +83,20 @@
         </Style>
     </UserControl.Resources>
     <DockPanel>
-        <Border DockPanel.Dock="Top" Background="{StaticResource W11.WindowBackground}" Padding="4"
-                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="4"
+                BorderBrush="{StaticResource W11.Divider}" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal">
                 <ToggleButton IsChecked="{Binding ShowTree, Mode=TwoWay}" ToolTip="显示/隐藏文件树"
                               Width="30" Height="24" Margin="0,0,4,0" Padding="0" FontSize="14"
                               FontFamily="Segoe MDL2 Assets" Content="&#xE700;"/>
                 <Button Command="{Binding BackCommand}" ToolTip="后退" Width="30" Height="24"
-                        Margin="4,0,4,0" Padding="0" FontSize="14"
+                        Margin="4,0,4,0" Style="{StaticResource W11.IconButton}" FontSize="14"
                         FontFamily="Segoe MDL2 Assets" Content="&#xE72B;"/>
                 <Button Command="{Binding ForwardCommand}" ToolTip="前进" Width="30" Height="24"
-                        Margin="0,0,4,0" Padding="0" FontSize="14"
+                        Margin="0,0,4,0" Style="{StaticResource W11.IconButton}" FontSize="14"
                         FontFamily="Segoe MDL2 Assets" Content="&#xE72A;"/>
                 <Button Command="{Binding UpCommand}" ToolTip="向上" Width="30" Height="24"
-                        Margin="0,0,4,0" Padding="0" FontSize="14"
+                        Margin="0,0,4,0" Style="{StaticResource W11.IconButton}" FontSize="14"
                         FontFamily="Segoe MDL2 Assets" Content="&#xE74A;"/>
                 <Grid Width="280" VerticalAlignment="Center" MinHeight="24">
                     <Border x:Name="CrumbBar" Background="Transparent" CornerRadius="4" Padding="4,0"
@@ -118,13 +118,13 @@
                              LostKeyboardFocus="AddressBox_LostKeyboardFocus"/>
                 </Grid>
                 <Button Command="{Binding RefreshCommand}" ToolTip="刷新 (F5)" Width="30" Height="24"
-                        Margin="4,0,0,0" Padding="0" FontSize="14"
+                        Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="14"
                         FontFamily="Segoe MDL2 Assets" Content="&#xE72C;"/>
                 <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="30" Height="24"
-                        Margin="4,0,0,0" Padding="0" FontSize="14"
+                        Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="14"
                         FontFamily="Segoe MDL2 Assets" Content="&#xE8F4;"/>
                 <Button Command="{Binding OpenRecycleBinCommand}" ToolTip="打开回收站" Width="30" Height="24"
-                        Margin="4,0,0,0" Padding="0" FontSize="14"
+                        Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="14"
                         FontFamily="Segoe MDL2 Assets" Content="&#xE74D;"/>
                 <ComboBox x:Name="ViewModeBox" Width="76" Height="24" Margin="8,0,0,0"
                           SelectedValue="{Binding ViewMode}" SelectedValuePath="Tag"
@@ -144,10 +144,11 @@
             </StackPanel>
         </Border>
 
-        <Border DockPanel.Dock="Top" Background="Transparent" Padding="2"
-                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="2"
+                BorderBrush="{StaticResource W11.Divider}" BorderThickness="0,0,0,1">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Width="22" Height="20" Content="＋"
+                        Style="{StaticResource W11.IconButton}"
                         ToolTip="新建标签页 (Ctrl+T)"
                         Click="NewTabButton_Click"/>
                 <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
@@ -156,8 +157,8 @@
             </DockPanel>
         </Border>
 
-        <Border DockPanel.Dock="Bottom" Background="{StaticResource W11.WindowBackground}" Padding="6,2"
-                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="0,1,0,0">
+        <Border DockPanel.Dock="Bottom" Background="{StaticResource W11.LayerBackground}" Padding="6,2"
+                BorderBrush="{StaticResource W11.Divider}" BorderThickness="0,1,0,0">
             <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource W11.TextSecondary}"
                        TextTrimming="CharacterEllipsis"/>
         </Border>
@@ -175,8 +176,8 @@
                    StaysOpen="False"
                    AllowsTransparency="True"
                    PopupAnimation="Fade">
-                <Border Background="White" BorderBrush="#999999" BorderThickness="1"
-                        MinWidth="280" MaxHeight="220" SnapsToDevicePixels="True">
+                <Border Background="{StaticResource W11.MenuBackground}" BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
+                        MinWidth="280" MaxHeight="220" SnapsToDevicePixels="True" CornerRadius="8">
                     <ListBox x:Name="SuggestList" BorderThickness="0"
                              DisplayMemberPath="Name"
                              PreviewKeyDown="SuggestList_PreviewKeyDown"
@@ -208,10 +209,10 @@
                             </StackPanel>
                             <!-- 驱动器用量条 -->
                             <Border Height="4" Width="110" Margin="21,1,0,2" CornerRadius="2"
-                                    Background="#E5E5E5"
+                                    Background="{StaticResource W11.ControlBorder}"
                                     ToolTip="{Binding UsageTooltip}"
                                     Visibility="{Binding HasUsageBar, Converter={StaticResource BoolToVis}}">
-                                <Border Background="#0F6CBD" CornerRadius="2" HorizontalAlignment="Left"
+                                <Border Background="{StaticResource W11.Accent}" CornerRadius="2" HorizontalAlignment="Left"
                                         Width="{Binding UsageBarWidth}"/>
                             </Border>
                         </StackPanel>
@@ -221,11 +222,12 @@
 
             <GridSplitter x:Name="TreeSplitter" Grid.Column="1" Width="6"
                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                          Background="#E5E5E5"
+                          Background="{StaticResource W11.Splitter}"
                           ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
                           ToolTip="拖拽调整文件树宽度"/>
 
-            <Border x:Name="DropZone" Grid.Column="2" BorderThickness="2" BorderBrush="Transparent">
+            <Border x:Name="DropZone" Grid.Column="2" BorderThickness="2" BorderBrush="Transparent"
+                    Background="{StaticResource W11.CardBackground}">
             <ListView x:Name="EntryList"
                       ItemsSource="{Binding Entries}"
                       SelectionMode="Extended"
@@ -341,18 +343,24 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListViewItem">
-                                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                            CornerRadius="4" SnapsToDevicePixels="True">
-                                        <GridViewRowPresenter Content="{TemplateBinding Content}"
-                                                              Columns="{TemplateBinding GridView.ColumnCollection}"
-                                                              Margin="{TemplateBinding Padding}"/>
-                                    </Border>
+                                    <Grid>
+                                        <Border x:Name="AccentBar" Width="3" CornerRadius="1.5"
+                                                Background="{StaticResource W11.Accent}"
+                                                HorizontalAlignment="Left" Margin="1,3" Visibility="Collapsed"/>
+                                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                CornerRadius="4" SnapsToDevicePixels="True">
+                                            <GridViewRowPresenter Content="{TemplateBinding Content}"
+                                                                  Columns="{TemplateBinding GridView.ColumnCollection}"
+                                                                  Margin="{TemplateBinding Padding}"/>
+                                        </Border>
+                                    </Grid>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
                                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                            <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -365,18 +373,24 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
-                                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                                    CornerRadius="4" SnapsToDevicePixels="True">
-                                                <ContentPresenter Content="{TemplateBinding Content}"
-                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                                  HorizontalAlignment="Center" VerticalAlignment="Top"/>
-                                            </Border>
+                                            <Grid>
+                                                <Border x:Name="AccentBar" Width="3" CornerRadius="1.5"
+                                                        Background="{StaticResource W11.Accent}"
+                                                        HorizontalAlignment="Left" Margin="1,3" Visibility="Collapsed"/>
+                                                <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                        CornerRadius="4" SnapsToDevicePixels="True">
+                                                    <ContentPresenter Content="{TemplateBinding Content}"
+                                                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                      HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                                </Border>
+                                            </Grid>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
                                                     <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                                    <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -387,18 +401,24 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
-                                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                                    CornerRadius="4" SnapsToDevicePixels="True">
-                                                <ContentPresenter Content="{TemplateBinding Content}"
-                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                                  HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-                                            </Border>
+                                            <Grid>
+                                                <Border x:Name="AccentBar" Width="3" CornerRadius="1.5"
+                                                        Background="{StaticResource W11.Accent}"
+                                                        HorizontalAlignment="Left" Margin="1,3" Visibility="Collapsed"/>
+                                                <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                        CornerRadius="4" SnapsToDevicePixels="True">
+                                                    <ContentPresenter Content="{TemplateBinding Content}"
+                                                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                      HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </Grid>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
                                                     <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                                    <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>

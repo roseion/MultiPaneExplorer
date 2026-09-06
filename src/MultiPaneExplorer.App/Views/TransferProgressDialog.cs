@@ -16,15 +16,20 @@ public sealed class TransferProgressDialog : Window
     private readonly DispatcherTimer _showTimer;
     private readonly ProgressBar _bar = new() { Height = 6, Minimum = 0, Maximum = 100 };
     private readonly TextBlock _itemsText = new() { Margin = new Thickness(0, 0, 0, 6) };
-    private readonly TextBlock _bytesText = new() { Foreground = System.Windows.Media.Brushes.Gray };
+    private readonly TextBlock _bytesText = new() { Foreground = SecondaryBrush() };
     private readonly TextBlock _fileText = new()
     {
-        Foreground = System.Windows.Media.Brushes.Gray,
+        Foreground = SecondaryBrush(),
         TextTrimming = TextTrimming.CharacterEllipsis,
         Margin = new Thickness(0, 2, 0, 0),
     };
     private bool _shown;
     private bool _finished;
+
+    /// <summary>辅助文字用主题三级色（资源未就绪时退回灰色）。</summary>
+    private static System.Windows.Media.Brush SecondaryBrush() =>
+        System.Windows.Application.Current?.TryFindResource("W11.TextTertiary") as System.Windows.Media.Brush
+        ?? System.Windows.Media.Brushes.Gray;
 
     public TransferProgressDialog(string verb, int totalItems, CancellationTokenSource cts)
     {

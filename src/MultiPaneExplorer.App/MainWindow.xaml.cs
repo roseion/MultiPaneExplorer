@@ -25,7 +25,10 @@ public partial class MainWindow : Window
         FourColumns,
     }
 
-    private static readonly SolidColorBrush SplitterBrush = new(Color.FromRgb(0xE5, 0xE5, 0xE5));
+    /// <summary>主题分隔条画刷（资源未就绪时退回同值浅色，保证可用）。</summary>
+    private static Brush SplitterBrush =>
+        System.Windows.Application.Current?.TryFindResource("W11.Splitter") as Brush
+        ?? new SolidColorBrush(Color.FromRgb(0xE7, 0xEB, 0xF1));
 
     private readonly List<ExplorerPane> _panes = [];
     private PaneLayout _layout = PaneLayout.Two;

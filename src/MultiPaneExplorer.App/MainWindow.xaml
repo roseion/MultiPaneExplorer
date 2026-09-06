@@ -32,10 +32,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#E5E5E5"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#D9D9D9"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.PressedBackground}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -51,11 +51,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#E81123"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DangerBrush}"/>
                                 <Setter TargetName="Content" Property="TextElement.Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#C50F1F"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DangerPressed}"/>
                                 <Setter TargetName="Content" Property="TextElement.Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -66,8 +66,8 @@
     </Window.Resources>
     <DockPanel x:Name="RootPanel">
         <!-- 合并后的标题栏：左侧应用名+空白区拖窗口，中部工具栏，右侧自绘窗口按钮 -->
-        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="36" Background="#F3F3F3"
-                BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="36" Background="{StaticResource W11.LayerBackground}"
+                BorderBrush="{StaticResource W11.Divider}" BorderThickness="0,0,0,1">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
@@ -109,17 +109,18 @@
                               shell:WindowChrome.IsHitTestVisibleInChrome="True"
                               Checked="HiddenFiles_Changed" Unchecked="HiddenFiles_Changed"/>
                     <Button x:Name="UndoButton" Content="&#xE7A7;" Width="30" Height="24" Margin="16,0,0,0"
-                            Padding="0" FontSize="14" FontFamily="Segoe MDL2 Assets" IsEnabled="False"
+                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe MDL2 Assets" IsEnabled="False"
                             ToolTip="撤销 (Ctrl+Z)"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="UndoButton_Click"/>
                     <Button x:Name="RedoButton" Content="&#xE7A6;" Width="30" Height="24" Margin="4,0,0,0"
-                            Padding="0" FontSize="14" FontFamily="Segoe MDL2 Assets" IsEnabled="False"
+                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe MDL2 Assets"
                             ToolTip="重做 (Ctrl+Y)"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="RedoButton_Click"/>
                     <Button x:Name="FavoritesButton" Content="★ 收藏"
                             Margin="16,0,0,0"
+                            Style="{StaticResource W11.IconButton}" Padding="6,2"
                             ToolTip="收藏夹：点击条目跳转激活窗格"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="FavoritesButton_Click"/>
@@ -141,7 +142,7 @@
         </Border>
         <GridSplitter x:Name="PreviewSplitter" DockPanel.Dock="Right" Width="6"
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                      Background="#E5E5E5" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
+                      Background="{StaticResource W11.Splitter}" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
                       ToolTip="拖拽调整预览栏宽度" Visibility="Collapsed"/>
         <Grid x:Name="PaneGrid"/>
     </DockPanel>

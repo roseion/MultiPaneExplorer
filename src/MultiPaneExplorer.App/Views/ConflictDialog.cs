@@ -59,7 +59,7 @@ public sealed class ConflictDialog : Window
             {
                 Margin = new Thickness(14, 4, 14, 0),
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = Brushes.DarkGoldenrod,
+                Foreground = FindResource("W11.WarningBrush") as Brush ?? Brushes.DarkGoldenrod,
                 Text = "⚠ 目标是文件夹：选择“替换”将把来源合并进该文件夹（复制与移动语义一致）。",
             });
         }
@@ -77,7 +77,8 @@ public sealed class ConflictDialog : Window
             HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(14),
         };
-        buttons.Children.Add(MakeButton("替换", ConflictDecision.Replace, applyToAll, 8, isDefault: true));
+        buttons.Children.Add(MakeButton("替换", ConflictDecision.Replace, applyToAll, 8, isDefault: true,
+            style: TryFindResource("W11.AccentButton") as Style));
         buttons.Children.Add(MakeButton("跳过", ConflictDecision.Skip, applyToAll, 8));
         buttons.Children.Add(MakeButton("保留两者", ConflictDecision.KeepBoth, applyToAll, 8));
         buttons.Children.Add(MakeCancelButton());
@@ -92,7 +93,7 @@ public sealed class ConflictDialog : Window
     }
 
     private Button MakeButton(string label, ConflictDecision decision, CheckBox applyToAll, double rightMargin,
-        bool isDefault = false)
+        bool isDefault = false, Style? style = null)
     {
         var button = new Button
         {
@@ -101,6 +102,8 @@ public sealed class ConflictDialog : Window
             Margin = new Thickness(0, 0, rightMargin, 0),
             IsDefault = isDefault,
         };
+        if (style is not null)
+            button.Style = style;
         button.Click += (_, _) =>
         {
             Decision = decision;
