@@ -239,6 +239,21 @@ public sealed class FileOperationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CopyFile_WhenConflictingTargetIsDirectory_ReplaceMergesIntoIt()
+    {
+        // 与移动语义一致：替换到同名文件夹 = 移入/合并，而不是报错
+        var target = Target();
+        Directory.CreateDirectory(Path.Combine(target, "a.txt", "inner"));
+        var source = WriteFile(Path.Combine("src", "a.txt"), "新内容");
+
+        var result = await _service.CopyIntoAsync([source], target,
+            new CopyOptions { OnConflict = _ => ConflictDecision.Replace });
+
+        Assert.False(result.HasErrors);
+        Assert.Equal("新内容", File.ReadAllText(Path.Combine(target, "a.txt", "a.txt")));
+    }
+
+    [Fact]
     public async Task Rename_ChangesName()
     {
         var file = WriteFile(Path.Combine("ren", "a.txt"), "内容");

@@ -262,10 +262,10 @@ public sealed class FileOperationService : IFileOperationService
         bool isRoot,
         CopyState state)
     {
-        var destination = state.ResolveConflict(
+        var (destination, replaced) = state.ResolveConflict(
             Path.Combine(targetParent, displayName),
             source,
-            sourceIsDirectory: false).Destination;
+            sourceIsDirectory: false);
         if (destination is null)
         {
             // 跳过也要推进进度条
@@ -273,6 +273,10 @@ public sealed class FileOperationService : IFileOperationService
             state.ReportProgress(source);
             return false;
         }
+
+        // 与移动语义一致：替换决策落到同名文件夹时按"移入该文件夹"合并处理
+        if (replaced && Directory.Exists(destination))
+            destination = Path.Combine(destination, displayName);
 
         await CopyFileContentAsync(source, destination, state).ConfigureAwait(false);
         if (isRoot)

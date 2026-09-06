@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using FileOps.Core;
 
 namespace MultiPaneExplorer.App.Views;
@@ -49,11 +50,26 @@ public sealed class ConflictDialog : Window
         AddCell(grid, 2, 1, item.SourceModified.ToString("yyyy-MM-dd HH:mm"));
         AddCell(grid, 2, 2, item.ExistingModified.ToString("yyyy-MM-dd HH:mm"));
 
+        var content = new StackPanel { Children = { header, grid } };
+
+        // 现有目标为文件夹（ExistingBytes<0）时提示"替换=合并"语义
+        if (item.ExistingBytes < 0)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Margin = new Thickness(14, 4, 14, 0),
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = Brushes.DarkGoldenrod,
+                Text = "⚠ 目标是文件夹：选择“替换”将把来源合并进该文件夹（复制与移动语义一致）。",
+            });
+        }
+
         var applyToAll = new CheckBox
         {
             Content = "对此后的冲突使用相同选择",
             Margin = new Thickness(14, 8, 14, 0),
         };
+        content.Children.Add(applyToAll);
 
         var buttons = new StackPanel
         {
@@ -61,11 +77,13 @@ public sealed class ConflictDialog : Window
             HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(14),
         };
-        buttons.Children.Add(MakeButton("替换", ConflictDecision.Replace, applyToAll, 8));
+        buttons.Children.Add(MakeButton("替换", ConflictDecision.Replace, applyToAll, 8, isDefault: true));
         buttons.Children.Add(MakeButton("跳过", ConflictDecision.Skip, applyToAll, 8));
-        buttons.Children.Add(MakeButton("保留两者", ConflictDecision.KeepBoth, applyToAll, 0));
+        buttons.Children.Add(MakeButton("保留两者", ConflictDecision.KeepBoth, applyToAll, 8));
+        buttons.Children.Add(MakeCancelButton());
+        content.Children.Add(buttons);
 
-        Content = new StackPanel { Children = { header, grid, applyToAll, buttons } };
+        Content = content;
         Loaded += (_, _) =>
         {
             Focus();
@@ -73,13 +91,15 @@ public sealed class ConflictDialog : Window
         };
     }
 
-    private Button MakeButton(string label, ConflictDecision decision, CheckBox applyToAll, double rightMargin)
+    private Button MakeButton(string label, ConflictDecision decision, CheckBox applyToAll, double rightMargin,
+        bool isDefault = false)
     {
         var button = new Button
         {
             Content = label,
             Width = 84,
             Margin = new Thickness(0, 0, rightMargin, 0),
+            IsDefault = isDefault,
         };
         button.Click += (_, _) =>
         {
@@ -87,6 +107,19 @@ public sealed class ConflictDialog : Window
             ApplyToAll = applyToAll.IsChecked == true;
             DialogResult = true;
         };
+        return button;
+    }
+
+    /// <summary>显式取消按钮（Esc 也可触发）：终止整个传输，已复制内容保留。</summary>
+    private Button MakeCancelButton()
+    {
+        var button = new Button
+        {
+            Content = "取消",
+            Width = 84,
+            IsCancel = true,
+        };
+        button.Click += (_, _) => DialogResult = false;
         return button;
     }
 
