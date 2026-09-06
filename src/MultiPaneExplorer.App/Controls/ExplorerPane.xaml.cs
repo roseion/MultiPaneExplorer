@@ -240,11 +240,10 @@ public partial class ExplorerPane : UserControl
             var tabButton = new Button
             {
                 Content = content,
-                Padding = new Thickness(8, 2, 4, 2),
-                Margin = new Thickness(0, 0, 3, 0),
+                Margin = new Thickness(0, 2, 3, 0),
                 Background = i == _activeTabIndex ? ActiveTabBrush : Brushes.Transparent,
-                // 无边框标签钮（与 W11.IconButton 同观感）：激活 = 卡片白底，非激活透明
-                Style = System.Windows.Application.Current?.TryFindResource("W11.IconButton") as Style,
+                // 卡片形标签（顶部圆角）：激活 = 卡片白底，非激活透明
+                Style = System.Windows.Application.Current?.TryFindResource("W11.TabButton") as Style,
             };
             tabButton.Click += (_, _) => SwitchTab(index);
             TabStrip.Children.Add(tabButton);

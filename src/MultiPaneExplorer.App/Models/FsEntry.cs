@@ -18,11 +18,25 @@ public sealed class FsEntry : System.ComponentModel.INotifyPropertyChanged
     /// <summary>递归搜索结果相对搜索根目录的子路径（"位置"列）；普通列表为空。</summary>
     public string Location { get; init; } = string.Empty;
 
+    /// <summary>驱动器用量比例（"此电脑"页宽卡用）；非驱动器条目为 null。</summary>
+    public double? DriveUsedFraction { get; init; }
+
+    /// <summary>驱动器容量说明（"xx GB 可用，共 yy GB"）。</summary>
+    public string DriveInfoText { get; init; } = string.Empty;
+
+    /// <summary>驱动器宽卡的用量条宽度（条总宽 236px）。</summary>
+    public double DriveBarWidth => DriveUsedFraction is { } fraction
+        ? Math.Round(236 * Math.Clamp(fraction, 0, 1))
+        : 0;
+
     /// <summary>回收站视图条目对应的元数据；普通文件系统条目为 null。</summary>
     public FileOps.Core.RecycleBinEntry? BinEntry { get; init; }
 
     /// <summary>类型图标（按扩展名缓存，冻结可跨线程）。</summary>
     public ImageSource? Icon => FileIconCache.Get(this);
+
+    /// <summary>32px 图标（列表/树按 20px 显示时用它，避免 16px 放大发糊）。</summary>
+    public ImageSource? IconLarge => FileIconCache.GetLarge(this);
 
     private ImageSource? _largeIcon;
 

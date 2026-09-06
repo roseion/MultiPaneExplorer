@@ -59,7 +59,7 @@ public static class FileIconCache
     private static ImageSource? LoadTreeIcon(string fullPath, bool isRecycleBin)
     {
         if (isRecycleBin)
-            return FromHandle(Icons.GetPathSmallIcon(RecycleBinParsingName)) ?? Load(true, DirectoryKey, small: true);
+            return FromHandle(Icons.GetPathLargeIcon(RecycleBinParsingName)) ?? Load(true, DirectoryKey, small: false);
 
         // 盘符根目录（"C:"/"C:\"）：按真实路径取盘符图标
         var root = Path.GetPathRoot(fullPath);
@@ -68,12 +68,12 @@ public static class FileIconCache
                           fullPath.TrimEnd(Path.DirectorySeparatorChar),
                           StringComparison.OrdinalIgnoreCase))
         {
-            var fromDrive = FromHandle(Icons.GetPathSmallIcon(root));
+            var fromDrive = FromHandle(Icons.GetPathLargeIcon(root));
             if (fromDrive is not null)
                 return fromDrive;
         }
 
-        return Load(true, DirectoryKey, small: true);
+        return Load(true, DirectoryKey, small: false);
     }
 
     private static ImageSource? FromHandle(IntPtr hIcon)

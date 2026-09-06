@@ -74,21 +74,21 @@
                     <Button x:Name="UndoButton" Content="&#xE7A7;" Width="32" Height="32" Margin="0,0,2,0"
                             Style="{StaticResource W11.IconButton}" FontSize="14"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" IsEnabled="False"
-                            ToolTip="撤销 (Ctrl+Z)" AutomationName="撤销"
+                            ToolTip="撤销 (Ctrl+Z)"
                             Click="UndoButton_Click"/>
                     <Button x:Name="RedoButton" Content="&#xE7A6;" Width="32" Height="32" Margin="0,0,8,0"
                             Style="{StaticResource W11.IconButton}" FontSize="14"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                            ToolTip="重做 (Ctrl+Y)" AutomationName="重做"
+                            ToolTip="重做 (Ctrl+Y)"
                             Click="RedoButton_Click"/>
                     <Button x:Name="FavoritesButton" Content="&#xE735;" Width="32" Height="32" Margin="0,0,2,0"
                             Style="{StaticResource W11.IconButton}" FontSize="14"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                            ToolTip="收藏夹：点击条目跳转激活窗格" AutomationName="收藏夹"
+                            ToolTip="收藏夹：点击条目跳转激活窗格"
                             Click="FavoritesButton_Click"/>
                     <Button x:Name="ViewMenuButton" Width="48" Height="32" Margin="0,0,8,0"
                             Style="{StaticResource W11.IconButton}"
-                            ToolTip="布局、显示隐藏文件与预览窗格" AutomationName="查看"
+                            ToolTip="布局、显示隐藏文件与预览窗格"
                             Click="ViewMenuButton_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="查看" FontSize="12" VerticalAlignment="Center"/>

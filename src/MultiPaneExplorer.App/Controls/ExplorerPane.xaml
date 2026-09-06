@@ -7,7 +7,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <models:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis"/>
         <DataTemplate x:Key="IconTemplate">
-            <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,1"/>
+            <Image Source="{Binding IconLarge}" Width="20" Height="20" Margin="0,1"/>
         </DataTemplate>
         <DataTemplate x:Key="NameCellTemplate">
             <Grid>
@@ -37,7 +37,7 @@
         </DataTemplate>
         <DataTemplate x:Key="ListTemplate">
             <StackPanel Orientation="Horizontal" Margin="4,1">
-                <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,1,6,1" VerticalAlignment="Center"/>
+                <Image Source="{Binding IconLarge}" Width="20" Height="20" Margin="0,1,6,1" VerticalAlignment="Center"/>
                 <Grid>
                     <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVis}}"/>
@@ -54,6 +54,54 @@
         <ItemsPanelTemplate x:Key="ListPanel">
             <VirtualizingStackPanel Orientation="Vertical"/>
         </ItemsPanelTemplate>
+        <!-- 标签页：圆角顶部的卡片形（激活白底与内容卡同色） -->
+        <Style x:Key="W11.TabButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="12,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6,6,0,0" Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.PressedBackground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- 此电脑页：驱动器宽卡 -->
+        <DataTemplate x:Key="DriveCardTemplate">
+            <Border Width="320" Margin="8,6" VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="{Binding IconLarge}" Width="40" Height="40" VerticalAlignment="Center"/>
+                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center" Width="236">
+                        <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding FullPath}"/>
+                        <Border Height="6" CornerRadius="3" Background="{StaticResource W11.ControlBorder}" Margin="0,6,0,4">
+                            <Border Background="{StaticResource W11.Accent}" CornerRadius="3"
+                                    HorizontalAlignment="Left" Width="{Binding DriveBarWidth}"/>
+                        </Border>
+                        <TextBlock Text="{Binding DriveInfoText}" FontSize="12"
+                                   Foreground="{StaticResource W11.TextSecondary}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="DriveCardsPanel">
+            <WrapPanel Orientation="Horizontal" ItemWidth="336"/>
+        </ItemsPanelTemplate>
+        <!-- 列头模板（含拖拽 Thumb） -->
         <!-- Win11 风列头：透明底+悬停浅灰，右缘 Thumb 拖拽调宽 -->
         <Style TargetType="GridViewColumnHeader">
             <Setter Property="Template">
@@ -83,64 +131,81 @@
         </Style>
     </UserControl.Resources>
     <DockPanel>
-        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="4">
-            <StackPanel Orientation="Horizontal">
-                <ToggleButton IsChecked="{Binding ShowTree, Mode=TwoWay}" ToolTip="显示/隐藏文件树"
-                              Width="30" Height="24" Margin="0,0,4,0" Padding="0" FontSize="14"
-                              FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE700;"/>
-                <Button Command="{Binding BackCommand}" ToolTip="后退" Width="30" Height="24"
-                        Margin="4,0,4,0" Style="{StaticResource W11.IconButton}" FontSize="14"
-                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72B;"/>
-                <Button Command="{Binding ForwardCommand}" ToolTip="前进" Width="30" Height="24"
-                        Margin="0,0,4,0" Style="{StaticResource W11.IconButton}" FontSize="14"
-                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72A;"/>
-                <Button Command="{Binding UpCommand}" ToolTip="向上" Width="30" Height="24"
-                        Margin="0,0,4,0" Style="{StaticResource W11.IconButton}" FontSize="14"
-                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE74A;"/>
-                <Grid Width="280" VerticalAlignment="Center" MinHeight="24">
-                    <Border x:Name="CrumbBar" Background="Transparent" CornerRadius="4" Padding="4,0"
-                            BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
-                            MouseLeftButtonDown="CrumbBar_MouseLeftButtonDown"
-                            ToolTip="点击空白处输入路径；点击各段跳转，▼ 展开子目录">
-                        <ScrollViewer x:Name="CrumbScroll" HorizontalScrollBarVisibility="Hidden"
-                                      VerticalScrollBarVisibility="Disabled"
-                                      VerticalAlignment="Center">
-                            <StackPanel x:Name="CrumbStrip" Orientation="Horizontal"/>
-                        </ScrollViewer>
-                    </Border>
-                    <TextBox x:Name="AddressBox" Visibility="Collapsed" VerticalContentAlignment="Center"
-                             ToolTip="输入路径后按回车跳转；输入时下拉补全；Esc 返回"
-                             Text="{Binding PathText, UpdateSourceTrigger=PropertyChanged}"
-                             KeyDown="AddressBox_KeyDown"
-                             TextChanged="AddressBox_TextChanged"
-                             PreviewKeyDown="AddressBox_PreviewKeyDown"
-                             LostKeyboardFocus="AddressBox_LostKeyboardFocus"/>
+        <!-- 命令/地址行（Explorer 式）：导航钮 32px｜面包屑+搜索（弹性）｜视图与动作 -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="8,6" MinHeight="48">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <ToggleButton IsChecked="{Binding ShowTree, Mode=TwoWay}" ToolTip="显示/隐藏文件树"
+                                  Width="32" Height="32" Margin="0,0,4,0" Padding="0" FontSize="16"
+                                  FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE700;"/>
+                    <Button Command="{Binding BackCommand}" ToolTip="后退" Width="32" Height="32"
+                            Style="{StaticResource W11.IconButton}" FontSize="16"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72B;"/>
+                    <Button Command="{Binding ForwardCommand}" ToolTip="前进" Width="32" Height="32"
+                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72A;"/>
+                    <Button Command="{Binding UpCommand}" ToolTip="向上" Width="32" Height="32"
+                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE74A;"/>
+                </StackPanel>
+                <Grid Grid.Column="1" Margin="12,0,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="140"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid VerticalAlignment="Center" MinHeight="30">
+                        <Border x:Name="CrumbBar" Background="{StaticResource W11.CardBackground}" CornerRadius="4" Padding="6,0"
+                                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
+                                MouseLeftButtonDown="CrumbBar_MouseLeftButtonDown"
+                                ToolTip="点击空白处输入路径；点击各段跳转，▼ 展开子目录">
+                            <ScrollViewer x:Name="CrumbScroll" HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          VerticalAlignment="Center">
+                                <StackPanel x:Name="CrumbStrip" Orientation="Horizontal"/>
+                            </ScrollViewer>
+                        </Border>
+                        <TextBox x:Name="AddressBox" Visibility="Collapsed" VerticalContentAlignment="Center"
+                                 ToolTip="输入路径后按回车跳转；输入时下拉补全；Esc 返回"
+                                 Text="{Binding PathText, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="AddressBox_KeyDown"
+                                 TextChanged="AddressBox_TextChanged"
+                                 PreviewKeyDown="AddressBox_PreviewKeyDown"
+                                 LostKeyboardFocus="AddressBox_LostKeyboardFocus"/>
+                    </Grid>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+                        <TextBox x:Name="FilterBox" Width="160" VerticalContentAlignment="Center"
+                                 ToolTip="过滤当前列表；勾选右侧则在全部子目录中搜索 (Ctrl+F 聚焦，Esc 清除)"
+                                 Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
+                                 KeyDown="FilterBox_KeyDown"/>
+                        <CheckBox Content="子目录" IsChecked="{Binding SearchSubdirectories, Mode=TwoWay}"
+                                  Margin="8,0,0,0" VerticalContentAlignment="Center"
+                                  ToolTip="勾选后在当前目录及全部子目录中搜索"/>
+                    </StackPanel>
                 </Grid>
-                <Button Command="{Binding RefreshCommand}" ToolTip="刷新 (F5)" Width="30" Height="24"
-                        Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="14"
-                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72C;"/>
-                <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="30" Height="24"
-                        Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="14"
-                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE8F4;"/>
-                <Button Command="{Binding OpenRecycleBinCommand}" ToolTip="打开回收站" Width="30" Height="24"
-                        Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="14"
-                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE74D;"/>
-                <ComboBox x:Name="ViewModeBox" Width="76" Height="24" Margin="8,0,0,0"
-                          SelectedValue="{Binding ViewMode}" SelectedValuePath="Tag"
-                          ToolTip="视图模式">
-                    <ComboBoxItem Content="详细信息" Tag="Details"/>
-                    <ComboBoxItem Content="大图标" Tag="LargeIcons"/>
-                    <ComboBoxItem Content="列表" Tag="List"/>
-                </ComboBox>
-                <TextBox x:Name="FilterBox" Width="130" VerticalContentAlignment="Center"
-                         Margin="8,0,0,0"
-                         ToolTip="过滤当前列表；勾选右侧则在全部子目录中搜索 (Ctrl+F 聚焦，Esc 清除)"
-                         Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
-                         KeyDown="FilterBox_KeyDown"/>
-                <CheckBox Content="子目录" IsChecked="{Binding SearchSubdirectories, Mode=TwoWay}"
-                          Margin="4,0,0,0" VerticalContentAlignment="Center"
-                          ToolTip="勾选后在当前目录及全部子目录中搜索"/>
-            </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <ComboBox x:Name="ViewModeBox" Width="88" Height="32" Margin="0,0,4,0"
+                              SelectedValue="{Binding ViewMode}" SelectedValuePath="Tag"
+                              ToolTip="视图模式">
+                        <ComboBoxItem Content="详细信息" Tag="Details"/>
+                        <ComboBoxItem Content="大图标" Tag="LargeIcons"/>
+                        <ComboBoxItem Content="列表" Tag="List"/>
+                    </ComboBox>
+                    <Button Command="{Binding RefreshCommand}" ToolTip="刷新 (F5)" Width="32" Height="32"
+                            Style="{StaticResource W11.IconButton}" FontSize="16"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72C;"/>
+                    <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="32" Height="32"
+                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE8F4;"/>
+                    <Button Command="{Binding OpenRecycleBinCommand}" ToolTip="打开回收站" Width="32" Height="32"
+                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE74D;"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="2">
@@ -198,15 +263,15 @@
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                        <StackPanel>
+                        <StackPanel Margin="0,2">
                             <StackPanel Orientation="Horizontal">
-                                <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,5,1"
+                                <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,5,1"
                                        VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
                             <!-- 驱动器用量条 -->
-                            <Border Height="4" Width="110" Margin="21,1,0,2" CornerRadius="2"
+                            <Border Height="4" Width="110" Margin="25,1,0,2" CornerRadius="2"
                                     Background="{StaticResource W11.ControlBorder}"
                                     ToolTip="{Binding UsageTooltip}"
                                     Visibility="{Binding HasUsageBar, Converter={StaticResource BoolToVis}}">
@@ -224,8 +289,8 @@
                           ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
                           ToolTip="拖拽调整文件树宽度"/>
 
-            <!-- 资源管理器解剖：内容区是浮在 Mica 上的白色圆角卡（顶部 8px 圆角，四周留 Mica 边） -->
-            <Border x:Name="DropZone" Grid.Column="2" BorderThickness="2" BorderBrush="{StaticResource W11.CardBorder}"
+            <!-- 资源管理器解剖：内容区是浮在 Mica 上的白色圆角卡（顶部 8px 圆角，四周留 Mica 边，发丝淡边） -->
+            <Border x:Name="DropZone" Grid.Column="2" BorderThickness="1" BorderBrush="{StaticResource W11.CardBorder}"
                     Background="{StaticResource W11.CardBackground}" CornerRadius="8,8,0,0" Margin="4,2,4,0"
                     Padding="2,2,0,0">
             <ListView x:Name="EntryList"
@@ -247,6 +312,13 @@
                 <ListView.Style>
                     <Style TargetType="ListView">
                         <Style.Triggers>
+                            <!-- 此电脑页：驱动器以宽卡呈现（Explorer"设备和驱动器"式），不随视图模式变化 -->
+                            <DataTrigger Binding="{Binding CurrentPath}" Value="{x:Null}">
+                                <Setter Property="View" Value="{x:Null}"/>
+                                <Setter Property="ItemTemplate" Value="{StaticResource DriveCardTemplate}"/>
+                                <Setter Property="ItemsPanel" Value="{StaticResource DriveCardsPanel}"/>
+                                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding ViewMode}" Value="LargeIcons">
                                 <Setter Property="View" Value="{x:Null}"/>
                                 <Setter Property="ItemTemplate" Value="{StaticResource LargeIconTemplate}"/>
@@ -340,6 +412,8 @@
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="Background" Value="Transparent"/>
                         <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
+                        <Setter Property="Padding" Value="4,3"/>
+                        <Setter Property="MinHeight" Value="32"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListViewItem">

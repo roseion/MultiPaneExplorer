@@ -1083,12 +1083,28 @@ public partial class PaneViewModel : ObservableObject
                              .Where(d => d.IsReady)
                              .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
                 {
+                    double? usedFraction = null;
+                    var infoText = string.Empty;
+                    try
+                    {
+                        if (drive.TotalSize > 0)
+                        {
+                            usedFraction = (double)(drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize;
+                            infoText = $"{drive.AvailableFreeSpace / 1024.0 / 1024 / 1024:F0} GB 可用，共 {drive.TotalSize / 1024.0 / 1024 / 1024:F0} GB";
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // 容量不可读时按普通条目显示
+                    }
                     Entries.Add(new FsEntry
                     {
                         Name = drive.Name,
                         FullPath = drive.Name,
                         IsDirectory = true,
                         ModifiedTime = default,
+                        DriveUsedFraction = usedFraction,
+                        DriveInfoText = infoText,
                     });
                 }
             }

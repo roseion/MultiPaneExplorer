@@ -35,6 +35,17 @@ public sealed class ShellIconService
         return result != 0 ? info.hIcon : IntPtr.Zero;
     }
 
+    /// <summary>按真实路径提取大图标（32×32，用于盘符等实际存在的 Shell 项）。</summary>
+    public IntPtr GetPathLargeIcon(string path)
+    {
+        var info = new SHFILEINFO();
+        var result = SHGetFileInfo(
+            path, 0, ref info,
+            (uint)Marshal.SizeOf<SHFILEINFO>(),
+            SHGFI_ICON | SHGFI_LARGEICON);
+        return result != 0 ? info.hIcon : IntPtr.Zero;
+    }
+
     private IntPtr GetIcon(string pathOrExtension, bool isDirectory, uint sizeFlag)
     {
         var name = isDirectory ? "文件夹" : EnsureExtension(pathOrExtension);
