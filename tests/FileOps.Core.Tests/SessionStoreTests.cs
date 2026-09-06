@@ -39,7 +39,7 @@ public sealed class SessionStoreTests : IDisposable
                 {
                     ShowTree = true,
                     ActiveTabIndex = 0,
-                    Tabs = [new PaneTabState { Path = "C:\\Users\\eosin\\Desktop" }],
+                    Tabs = [new PaneTabState { Path = "C:\\Users\\Demo\\Desktop" }],
                 },
             ],
         };
@@ -59,7 +59,7 @@ public sealed class SessionStoreTests : IDisposable
         Assert.Equal("C:\\Windows", restored.Panes[0].Tabs[0].Path);
         Assert.Equal("D:\\", restored.Panes[0].Tabs[1].Path);
         Assert.True(restored.Panes[1].ShowTree);
-        Assert.Equal("C:\\Users\\eosin\\Desktop", restored.Panes[1].Tabs[0].Path);
+        Assert.Equal("C:\\Users\\Demo\\Desktop", restored.Panes[1].Tabs[0].Path);
     }
 
     [Fact]
