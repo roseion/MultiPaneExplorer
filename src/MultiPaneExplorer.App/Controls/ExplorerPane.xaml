@@ -368,6 +368,14 @@
                         <MenuItem Header="压缩为 ZIP"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.ZipSelectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="解压到当前文件夹"
+                                  ToolTip="把选中的 .zip 解压到当前目录（重名自动改名，不覆盖已有文件）"
+                                  Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
+                                  Command="{Binding PlacementTarget.DataContext.ExtractZipHereCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="解压到独立文件夹"
+                                  ToolTip="解压到以压缩包命名的新文件夹（可撤销）"
+                                  Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
+                                  Command="{Binding PlacementTarget.DataContext.ExtractZipToFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         <MenuItem Header="发送到桌面快捷方式"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.SendToDesktopCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>

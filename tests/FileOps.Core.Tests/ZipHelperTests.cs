@@ -74,4 +74,52 @@ public sealed class ZipHelperTests : IDisposable
         var target = Directory.CreateDirectory(Path.Combine(_root, "out")).FullName;
         Assert.Throws<ArgumentException>(() => ZipHelper.CreateZip([], target, "pack"));
     }
+
+    // ---- 解压 ----
+
+    [Fact]
+    public void ExtractZip_KeepsStructure_AndEmptyDirs()
+    {
+        var target = Directory.CreateDirectory(Path.Combine(_root, "out")).FullName;
+        WriteFile(Path.Combine("src", "folder", "sub", "file.txt"), "内容");
+        Directory.CreateDirectory(Path.Combine(_root, "src", "folder", "empty"));
+        var zip2 = ZipHelper.CreateZip([Path.Combine(_root, "src", "folder")], target, "pack2");
+
+        var dest = Directory.CreateDirectory(Path.Combine(_root, "extract")).FullName;
+        ZipHelper.ExtractZip(zip2, dest);
+
+        Assert.Equal("内容", File.ReadAllText(Path.Combine(dest, "folder", "sub", "file.txt")));
+        Assert.True(Directory.Exists(Path.Combine(dest, "folder", "empty")));
+    }
+
+    [Fact]
+    public void ExtractZip_NameConflict_AppendsNumber()
+    {
+        var target = Directory.CreateDirectory(Path.Combine(_root, "out")).FullName;
+        var file = WriteFile("a.txt", "打包内容");
+        var zipPath = ZipHelper.CreateZip([file], target, "pack");
+
+        var dest = Directory.CreateDirectory(Path.Combine(_root, "extract")).FullName;
+        File.WriteAllText(Path.Combine(dest, "a.txt"), "已存在内容");
+
+        ZipHelper.ExtractZip(zipPath, dest);
+
+        Assert.Equal("已存在内容", File.ReadAllText(Path.Combine(dest, "a.txt"))); // 原文件不动
+        Assert.Equal("打包内容", File.ReadAllText(Path.Combine(dest, "a (2).txt")));
+    }
+
+    [Fact]
+    public void ExtractZip_ZipSlipEntry_StaysInsideDestination()
+    {
+        var target = Directory.CreateDirectory(Path.Combine(_root, "out")).FullName;
+        var zipPath = Path.Combine(target, "evil.zip");
+        using (var archive = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create))
+            archive.CreateEntry("../evil.txt");
+
+        var dest = Directory.CreateDirectory(Path.Combine(_root, "extract")).FullName;
+        ZipHelper.ExtractZip(zipPath, dest);
+
+        Assert.False(File.Exists(Path.Combine(_root, "evil.txt"))); // 逃逸失败
+        Assert.True(File.Exists(Path.Combine(dest, "evil.txt")));   // 留在目标内
+    }
 }

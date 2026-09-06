@@ -1052,6 +1052,46 @@ public partial class PaneViewModel : ObservableObject
         }
     }
 
+    /// <summary>右键"解压到当前文件夹/独立文件夹"：单选 .zip 时可用；独立文件夹模式可撤销。</summary>
+    [RelayCommand]
+    private Task ExtractZipHereAsync() => ExtractZipCoreAsync(separateFolder: false);
+
+    [RelayCommand]
+    private Task ExtractZipToFolderAsync() => ExtractZipCoreAsync(separateFolder: true);
+
+    private async Task ExtractZipCoreAsync(bool separateFolder)
+    {
+        if (IsRecycleBinView || CurrentPath is null)
+            return;
+        var entry = SelectedEntries.Count == 1 ? SelectedEntries[0] : null;
+        if (entry is null || entry.IsDirectory
+            || !string.Equals(Path.GetExtension(entry.Name), ".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusText = "解压：请先选中一个压缩包（.zip）";
+            return;
+        }
+
+        var zipPath = entry.FullPath;
+        var directory = CurrentPath;
+        var destination = separateFolder
+            ? Path.Combine(directory, Path.GetFileNameWithoutExtension(zipPath))
+            : directory;
+
+        StatusText = $"正在解压 {entry.Name}…";
+        try
+        {
+            var result = await Task.Run(() => ZipHelper.ExtractZip(zipPath, destination));
+            if (separateFolder)
+                UndoHub.Service.Push(new CreateOperation(result, isDirectory: true));
+            StatusText = $"已解压到：{result}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"解压失败：{ex.Message}";
+        }
+        LoadEntries();
+    }
+
     /// <summary>显示一条由外部（如全局撤销/重做）触发的状态信息。</summary>
     public void ShowTransientStatus(string message) => StatusText = message;
 
