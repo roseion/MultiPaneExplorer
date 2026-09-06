@@ -116,6 +116,7 @@ public partial class PaneViewModel : ObservableObject
 
     partial void OnFilterTextChanged(string value)
     {
+        OnPropertyChanged(nameof(IsSearchResultsView));
         if (SearchSubdirectories)
             _ = RunSearchAsync();
         else
@@ -124,6 +125,7 @@ public partial class PaneViewModel : ObservableObject
 
     partial void OnSearchSubdirectoriesChanged(bool value)
     {
+        OnPropertyChanged(nameof(IsSearchResultsView));
         if (SearchSubdirectories && FilterText.Trim().Length > 0)
             _ = RunSearchAsync();
         else if (!SearchSubdirectories)
@@ -982,6 +984,70 @@ public partial class PaneViewModel : ObservableObject
             StatusText = $"新建文本文档失败：{ex.Message}";
         }
         LoadEntries();
+    }
+
+    /// <summary>true=当前显示递归搜索结果（"打开所在文件夹"、"位置"列据此显隐）。</summary>
+    public bool IsSearchResultsView => SearchSubdirectories && FilterText.Trim().Length > 0;
+
+    /// <summary>右键"压缩为 ZIP"：把选中项打包为当前目录下的 zip（重名自动追加序号，可撤销）。</summary>
+    [RelayCommand]
+    private async Task ZipSelectionAsync()
+    {
+        if (IsRecycleBinView || CurrentPath is null || SelectedPaths.Count == 0)
+            return;
+
+        var paths = SelectedPaths.ToList();
+        var directory = CurrentPath;
+        var baseName = paths.Count == 1
+            ? Path.GetFileNameWithoutExtension(
+                Path.GetFileName(paths[0].TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))
+            : Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (baseName.Length == 0)
+            baseName = "压缩包";
+
+        StatusText = $"正在压缩 {paths.Count} 个项目…";
+        try
+        {
+            var zipPath = await Task.Run(() => ZipHelper.CreateZip(paths, directory, baseName));
+            UndoHub.Service.Push(new CreateOperation(zipPath, isDirectory: false));
+            StatusText = $"已压缩为：{Path.GetFileName(zipPath)}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"压缩失败：{ex.Message}";
+        }
+        LoadEntries();
+    }
+
+    /// <summary>右键"发送到桌面快捷方式"：为单个选中项在桌面创建 .lnk（重名自动追加序号）。</summary>
+    [RelayCommand]
+    private void SendToDesktop()
+    {
+        if (IsRecycleBinView)
+            return;
+        if (SelectedPaths.Count != 1)
+        {
+            StatusText = "发送到桌面快捷方式：请只选中一个项目";
+            return;
+        }
+
+        var target = SelectedPaths[0];
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        var baseName = Path.GetFileNameWithoutExtension(
+            Path.GetFileName(target.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
+        var linkPath = Path.Combine(desktop, $"{baseName} - 快捷方式.lnk");
+        for (var i = 2; File.Exists(linkPath); i++)
+            linkPath = Path.Combine(desktop, $"{baseName} - 快捷方式 ({i}).lnk");
+
+        try
+        {
+            _shortcuts.CreateShortcut(target, linkPath);
+            StatusText = $"已发送快捷方式到桌面：{Path.GetFileName(linkPath)}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"发送快捷方式失败：{ex.Message}";
+        }
     }
 
     /// <summary>显示一条由外部（如全局撤销/重做）触发的状态信息。</summary>

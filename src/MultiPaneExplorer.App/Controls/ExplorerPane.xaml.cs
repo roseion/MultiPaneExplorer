@@ -759,6 +759,25 @@ public partial class ExplorerPane : UserControl
         FileOps.Core.ShellDialogs.ShowFileProperties(ownerHwnd, Vm.SelectedPaths[0]);
     }
 
+    /// <summary>搜索结果右键"打开所在文件夹"：跳转到文件目录并定位该文件。</summary>
+    private void OpenContainingFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (Vm.SelectedEntries.LastOrDefault() is not { } entry || entry.IsDirectory)
+            return;
+        var parent = Path.GetDirectoryName(entry.FullPath);
+        if (parent is null || !Directory.Exists(parent))
+            return;
+
+        Vm.NavigateTo(parent);
+        // LoadEntries 为同步枚举，此时列表已就绪，直接定位
+        if (Vm.Entries.FirstOrDefault(item =>
+                string.Equals(item.FullPath, entry.FullPath, StringComparison.OrdinalIgnoreCase)) is { } match)
+        {
+            EntryList.SelectedItem = match;
+            EntryList.ScrollIntoView(match);
+        }
+    }
+
     private void EntryList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
         Vm.SetSelection(EntryList.SelectedItems.Cast<FsEntry>().ToList());
 

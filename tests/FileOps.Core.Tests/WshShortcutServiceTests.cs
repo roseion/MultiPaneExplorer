@@ -74,4 +74,29 @@ public sealed class WshShortcutServiceTests : IDisposable
 
         Assert.Null(_service.ResolveTarget(missing));
     }
+
+    [Fact]
+    public void CreateShortcut_CreatesLink_ThatResolvesToTarget()
+    {
+        var file = Path.Combine(_root, "目标.txt");
+        File.WriteAllText(file, "内容");
+        var linkPath = Path.Combine(_root, "发送的快捷方式.lnk");
+
+        _service.CreateShortcut(file, linkPath);
+
+        Assert.True(File.Exists(linkPath));
+        var result = _service.ResolveTarget(linkPath);
+        Assert.NotNull(result);
+        Assert.Equal(Normalize(file), Normalize(result!), ignoreCase: true);
+    }
+
+    [Fact]
+    public void CreateShortcut_ToMissingDirectory_Throws()
+    {
+        var file = Path.Combine(_root, "目标.txt");
+        File.WriteAllText(file, "内容");
+        var linkPath = Path.Combine(_root, "缺失目录", "快捷方式.lnk");
+
+        Assert.Throws<InvalidOperationException>(() => _service.CreateShortcut(file, linkPath));
+    }
 }

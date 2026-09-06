@@ -311,6 +311,17 @@
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.DeletePermanentlyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         <Separator/>
+                        <MenuItem Header="压缩为 ZIP"
+                                  Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
+                                  Command="{Binding PlacementTarget.DataContext.ZipSelectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="发送到桌面快捷方式"
+                                  Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
+                                  Command="{Binding PlacementTarget.DataContext.SendToDesktopCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="打开所在文件夹"
+                                  ToolTip="跳转到该文件所在的目录（递归搜索结果用）"
+                                  Visibility="{Binding DataContext.IsSearchResultsView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"
+                                  Click="OpenContainingFolder_Click"/>
+                        <Separator/>
                         <MenuItem Header="打开方式…" Click="OpenWith_Click"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
                         <MenuItem Header="属性" Click="Properties_Click"

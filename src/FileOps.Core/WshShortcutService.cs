@@ -31,4 +31,25 @@ public sealed class WshShortcutService : IShortcutService
             return null;
         }
     }
+
+    public string CreateShortcut(string targetPath, string linkPath)
+    {
+        try
+        {
+            var shellType = Type.GetTypeFromProgID("WScript.Shell")
+                ?? throw new InvalidOperationException("WScript.Shell COM 不可用");
+            dynamic shell = Activator.CreateInstance(shellType)!;
+            dynamic shortcut = shell.CreateShortcut(linkPath);
+            shortcut.TargetPath = targetPath;
+            shortcut.Save();
+            return linkPath;
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException
+                                      or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException
+                                      or InvalidOperationException
+                                      or IOException)
+        {
+            throw new InvalidOperationException($"创建快捷方式失败：{ex.Message}", ex);
+        }
+    }
 }
