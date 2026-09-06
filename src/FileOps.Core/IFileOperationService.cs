@@ -34,6 +34,13 @@ public interface IFileOperationService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 永久删除若干路径（不进回收站，不可撤销）。单个失败不影响其余条目。
+    /// </summary>
+    Task<DeleteResult> DeletePermanentlyAsync(
+        IEnumerable<string> paths,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 重命名文件或目录（保持在原目录内）。
     /// 名称非法或目标已存在时抛出异常；路径与新名称相同（仅大小写差异视为未变）时原样返回。
     /// </summary>

@@ -776,7 +776,10 @@ public partial class ExplorerPane : UserControl
                 e.Handled = true;
                 break;
             case Key.Delete:
-                Vm.DeleteCommand.Execute(null);
+                if (Keyboard.Modifiers == ModifierKeys.Shift && !Vm.IsRecycleBinView)
+                    Vm.DeletePermanentlyCommand.Execute(null);
+                else
+                    Vm.DeleteCommand.Execute(null);
                 e.Handled = true;
                 break;
             case Key.F2:

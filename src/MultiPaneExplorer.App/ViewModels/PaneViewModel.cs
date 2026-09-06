@@ -694,11 +694,25 @@ public partial class PaneViewModel : ObservableObject
 
         if (IsRecycleBinView)
         {
-            // 回收站视图内删除 = 永久删除（不可撤销）
+            // 回收站视图内删除 = 永久删除（不可撤销），加确认防误触
             var targets = SelectedEntries
                 .Where(entry => entry.BinEntry is not null)
                 .Select(entry => entry.BinEntry!)
                 .ToList();
+            if (targets.Count == 0)
+                return;
+
+            var binOwner = System.Windows.Application.Current.MainWindow;
+            var binConfirm = System.Windows.MessageBox.Show(
+                binOwner,
+                $"确定从回收站永久删除选中的 {targets.Count} 个项目吗？\n此操作无法撤销。",
+                "永久删除",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning,
+                System.Windows.MessageBoxResult.No);
+            if (binConfirm != System.Windows.MessageBoxResult.Yes)
+                return;
+
             StatusText = $"正在永久删除 {targets.Count} 个项目…";
             var deleted = await _recycleBin.DeletePermanentlyAsync(targets);
             StatusText = $"已永久删除 {deleted} 个项目（不可撤销）";
@@ -727,6 +741,40 @@ public partial class PaneViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusText = $"删除失败：{ex.Message}";
+        }
+        LoadEntries();
+    }
+
+    /// <summary>Shift+Del：跳过回收站直接永久删除，带确认框（不可撤销）。</summary>
+    [RelayCommand]
+    private async Task DeletePermanentlyAsync()
+    {
+        if (SelectedPaths.Count == 0 || IsRecycleBinView)
+            return; // 回收站视图内 Del 本身就是永久删除，走 DeleteCommand
+
+        var paths = SelectedPaths.ToList();
+        var owner = System.Windows.Application.Current.MainWindow;
+        var confirm = System.Windows.MessageBox.Show(
+            owner,
+            $"确定永久删除选中的 {paths.Count} 个项目吗？\n此操作不进入回收站，无法撤销。",
+            "永久删除",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning,
+            System.Windows.MessageBoxResult.No);
+        if (confirm != System.Windows.MessageBoxResult.Yes)
+            return;
+
+        StatusText = $"正在永久删除 {paths.Count} 个项目…";
+        try
+        {
+            var result = await Task.Run(() => _fileOps.DeletePermanentlyAsync(paths));
+            StatusText = result.HasErrors
+                ? $"永久删除完成：{result.DeletedCount} 个成功，{result.Errors.Count} 个失败"
+                : $"已永久删除 {result.DeletedCount} 个项目（不可撤销）";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"永久删除失败：{ex.Message}";
         }
         LoadEntries();
     }

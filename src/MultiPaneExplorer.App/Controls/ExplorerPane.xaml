@@ -267,6 +267,10 @@
                                   InputGestureText="Del"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="永久删除"
+                                  InputGestureText="Shift+Del"
+                                  Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
+                                  Command="{Binding PlacementTarget.DataContext.DeletePermanentlyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         <Separator/>
                         <MenuItem Header="打开方式…" Click="OpenWith_Click"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>

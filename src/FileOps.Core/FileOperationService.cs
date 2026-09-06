@@ -319,6 +319,45 @@ public sealed class FileOperationService : IFileOperationService
         return Task.FromResult(new DeleteResult(deleted, errors));
     }
 
+    public Task<DeleteResult> DeletePermanentlyAsync(
+        IEnumerable<string> paths,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+
+        var deleted = 0;
+        var errors = new List<string>();
+
+        foreach (var path in paths)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    deleted++;
+                }
+                else if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, recursive: true);
+                    deleted++;
+                }
+                else
+                {
+                    errors.Add($"源不存在：{path}");
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                          or System.Security.SecurityException)
+            {
+                errors.Add($"永久删除失败：{path}（{ex.Message}）");
+            }
+        }
+
+        return Task.FromResult(new DeleteResult(deleted, errors));
+    }
+
     public Task<string> RenameAsync(string path, string newName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(newName))

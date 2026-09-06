@@ -182,6 +182,62 @@ public sealed class FileOperationServiceTests : IDisposable
         Assert.False(File.Exists(file));
     }
 
+    // ---- 永久删除（Shift+Del，不进回收站，不可撤销）----
+
+    [Fact]
+    public async Task DeleteFile_Permanently_RemovesFile()
+    {
+        var file = WriteFile(Path.Combine("todelete", "a.txt"));
+
+        var result = await _service.DeletePermanentlyAsync([file]);
+
+        Assert.False(result.HasErrors);
+        Assert.Equal(1, result.DeletedCount);
+        Assert.False(File.Exists(file));
+    }
+
+    [Fact]
+    public async Task DeleteDirectory_Permanently_RemovesTree()
+    {
+        var dir = MakeDirectory(Path.Combine("todelete", "folder"));
+        WriteFile(Path.Combine("todelete", "folder", "sub", "f.txt"));
+
+        var result = await _service.DeletePermanentlyAsync([dir]);
+
+        Assert.False(result.HasErrors);
+        Assert.Equal(1, result.DeletedCount);
+        Assert.False(Directory.Exists(dir));
+    }
+
+    [Fact]
+    public async Task DeletePermanently_MissingSource_RecordsErrorButDeletesRest()
+    {
+        var file = WriteFile(Path.Combine("todelete", "a.txt"));
+        var missing = Path.Combine(_root, "todelete", "ghost.txt");
+
+        var result = await _service.DeletePermanentlyAsync([missing, file]);
+
+        Assert.True(result.HasErrors);
+        Assert.Equal(1, result.DeletedCount);
+        Assert.Single(result.Errors);
+        Assert.Contains("ghost.txt", result.Errors[0]);
+        Assert.False(File.Exists(file));
+    }
+
+    [Fact]
+    public async Task DeletePermanently_ReadOnlyFile_RecordsError()
+    {
+        var file = WriteFile(Path.Combine("todelete", "ro.txt"));
+        File.SetAttributes(file, FileAttributes.ReadOnly);
+
+        var result = await _service.DeletePermanentlyAsync([file]);
+
+        Assert.True(result.HasErrors);
+        Assert.Equal(0, result.DeletedCount);
+        Assert.True(File.Exists(file));
+        File.SetAttributes(file, FileAttributes.Normal); // 还原属性，便于 Dispose 清理
+    }
+
     [Fact]
     public async Task Rename_ChangesName()
     {
