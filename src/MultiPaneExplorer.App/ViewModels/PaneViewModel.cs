@@ -656,6 +656,16 @@ public partial class PaneViewModel : ObservableObject
                     ? $"已{verb} {result.CopiedCount} 个项目，跳过 {result.SkippedCount} 个"
                     : $"已{verb} {result.CopiedCount} 个项目";
 
+            if (result.HasErrors && ElevatedRetry.HasAccessDenied(result.Errors))
+                await TryElevatedRetryAsync(
+                    new ElevatedOpPayload
+                    {
+                        Kind = move ? ElevatedOpKind.MoveInto : ElevatedOpKind.CopyInto,
+                        Sources = [.. sources],
+                        TargetDirectory = target,
+                    },
+                    move ? "移动" : "复制");
+
             if (result.CopiedCount > 0 && result.Transferred is { Count: > 0 })
                 UndoHub.Service.Push(new TransferOperation(
                     _fileOps, result.Transferred, target, move, verb, result.ReplacedAny));
@@ -745,6 +755,15 @@ public partial class PaneViewModel : ObservableObject
                 ? $"删除完成：{result.DeletedCount} 个成功，{result.Errors.Count} 个失败"
                 : $"已删除 {result.DeletedCount} 个项目到回收站";
 
+            if (result.HasErrors && ElevatedRetry.HasAccessDenied(result.Errors))
+                await TryElevatedRetryAsync(
+                    new ElevatedOpPayload
+                    {
+                        Kind = ElevatedOpKind.DeleteToRecycleBin,
+                        Sources = [.. paths],
+                    },
+                    "删除");
+
             if (result.DeletedCount > 0)
             {
                 // 对比删除前后的回收站快照，拿到本次删除的条目（撤销=还原）
@@ -786,11 +805,47 @@ public partial class PaneViewModel : ObservableObject
             StatusText = result.HasErrors
                 ? $"永久删除完成：{result.DeletedCount} 个成功，{result.Errors.Count} 个失败"
                 : $"已永久删除 {result.DeletedCount} 个项目（不可撤销）";
+
+            if (result.HasErrors && ElevatedRetry.HasAccessDenied(result.Errors))
+                await TryElevatedRetryAsync(
+                    new ElevatedOpPayload
+                    {
+                        Kind = ElevatedOpKind.DeletePermanently,
+                        Sources = [.. paths],
+                    },
+                    "永久删除");
         }
         catch (Exception ex)
         {
             StatusText = $"永久删除失败：{ex.Message}";
         }
+        LoadEntries();
+    }
+
+    /// <summary>访问被拒时的提权重试询问；确认后经提权辅助进程执行（结果不进撤销栈）。</summary>
+    private async Task TryElevatedRetryAsync(ElevatedOpPayload payload, string verb)
+    {
+        var owner = System.Windows.Application.Current.MainWindow;
+        var confirm = System.Windows.MessageBox.Show(
+            owner,
+            "部分项目因权限不足未能处理。\n\n是否以管理员身份重试这些项目？",
+            "需要管理员权限",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question,
+            System.Windows.MessageBoxResult.No);
+        if (confirm != System.Windows.MessageBoxResult.Yes)
+        {
+            StatusText = "已跳过提权重试";
+            return;
+        }
+
+        StatusText = $"正在以管理员身份{verb}…";
+        var result = await ElevatedRetry.RunAsync(payload);
+        StatusText = result is null
+            ? "提权重试已取消"
+            : result.HasErrors
+                ? $"管理员{verb}完成：{result.SuccessCount} 个成功，{result.Errors.Count} 个失败（提权结果不可撤销）"
+                : $"已通过管理员权限{verb} {result.SuccessCount} 个项目（提权结果不可撤销）";
         LoadEntries();
     }
 
