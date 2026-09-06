@@ -65,11 +65,38 @@
         </Style>
     </Window.Resources>
     <DockPanel x:Name="RootPanel">
-        <!-- 合并后的标题栏：左侧应用名+空白区拖窗口，中部工具栏，右侧自绘窗口按钮（与工具栏同层 Mica，无分隔线） -->
-        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="36" Background="{StaticResource W11.LayerBackground}">
+        <!-- 合并后的标题栏（40px Mica）：左应用名，中部拖拽区，右区功能图标钮+自绘窗口按钮；
+             布局切换/显示隐藏文件/预览收进"查看"菜单，保持标题栏极简（Explorer 式） -->
+        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="40" Background="{StaticResource W11.LayerBackground}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="UndoButton" Content="&#xE7A7;" Width="32" Height="32" Margin="0,0,2,0"
+                            Style="{StaticResource W11.IconButton}" FontSize="14"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" IsEnabled="False"
+                            ToolTip="撤销 (Ctrl+Z)" AutomationName="撤销"
+                            Click="UndoButton_Click"/>
+                    <Button x:Name="RedoButton" Content="&#xE7A6;" Width="32" Height="32" Margin="0,0,8,0"
+                            Style="{StaticResource W11.IconButton}" FontSize="14"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                            ToolTip="重做 (Ctrl+Y)" AutomationName="重做"
+                            Click="RedoButton_Click"/>
+                    <Button x:Name="FavoritesButton" Content="&#xE735;" Width="32" Height="32" Margin="0,0,2,0"
+                            Style="{StaticResource W11.IconButton}" FontSize="14"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                            ToolTip="收藏夹：点击条目跳转激活窗格" AutomationName="收藏夹"
+                            Click="FavoritesButton_Click"/>
+                    <Button x:Name="ViewMenuButton" Width="48" Height="32" Margin="0,0,8,0"
+                            Style="{StaticResource W11.IconButton}"
+                            ToolTip="布局、显示隐藏文件与预览窗格" AutomationName="查看"
+                            Click="ViewMenuButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="查看" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#xE70D;" FontSize="8" Margin="4,1,0,0"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <Button Style="{StaticResource CaptionButtonStyle}" Content="&#xE921;"
                             ToolTip="最小化" Click="MinimizeButton_Click"/>
                     <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButtonStyle}" Content="&#xE922;"
@@ -77,59 +104,9 @@
                     <Button Style="{StaticResource CaptionCloseButtonStyle}" Content="&#xE8BB;"
                             ToolTip="关闭" Click="CloseButton_Click"/>
                 </StackPanel>
-                <TextBlock Text="多栏资源管理器" VerticalAlignment="Center" Margin="10,0,14,0"
+                <TextBlock Text="多栏资源管理器" VerticalAlignment="Center" Margin="12,0,14,0"
                            FontSize="12" FontWeight="SemiBold"
                            Foreground="{StaticResource W11.TextSecondary}"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="布局：" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <RadioButton x:Name="LayoutTwoButton" GroupName="PaneLayout" Content="双栏" Tag="Two" IsChecked="True"
-                                 VerticalContentAlignment="Center" Margin="0,0,8,0"
-                                 ToolTip="左右双栏"
-                                 shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                                 Checked="Layout_Checked"/>
-                    <RadioButton x:Name="LayoutThreeButton" GroupName="PaneLayout" Content="三栏" Tag="Three"
-                                 VerticalContentAlignment="Center" Margin="0,0,8,0"
-                                 ToolTip="三列并列"
-                                 shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                                 Checked="Layout_Checked"/>
-                    <RadioButton x:Name="LayoutFourGridButton" GroupName="PaneLayout" Content="四栏（田字）" Tag="FourGrid"
-                                 VerticalContentAlignment="Center" Margin="0,0,8,0"
-                                 ToolTip="田字格四栏，横竖分隔条均可拖拽"
-                                 shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                                 Checked="Layout_Checked"/>
-                    <RadioButton x:Name="LayoutFourColumnsButton" GroupName="PaneLayout" Content="四栏（并排）" Tag="FourColumns"
-                                 VerticalContentAlignment="Center" Margin="0,0,16,0"
-                                 ToolTip="单行四列并排，分隔条均可拖拽"
-                                 shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                                 Checked="Layout_Checked"/>
-                    <CheckBox x:Name="HiddenFilesToggle" Content="显示隐藏文件"
-                              VerticalContentAlignment="Center"
-                              ToolTip="切换所有窗格是否显示隐藏文件"
-                              shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                              Checked="HiddenFiles_Changed" Unchecked="HiddenFiles_Changed"/>
-                    <Button x:Name="UndoButton" Content="&#xE7A7;" Width="30" Height="24" Margin="16,0,0,0"
-                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" IsEnabled="False"
-                            ToolTip="撤销 (Ctrl+Z)"
-                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                            Click="UndoButton_Click"/>
-                    <Button x:Name="RedoButton" Content="&#xE7A6;" Width="30" Height="24" Margin="4,0,0,0"
-                            Style="{StaticResource W11.IconButton}" FontSize="14" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                            ToolTip="重做 (Ctrl+Y)"
-                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                            Click="RedoButton_Click"/>
-                    <Button x:Name="FavoritesButton" Content="★ 收藏"
-                            Margin="16,0,0,0"
-                            Style="{StaticResource W11.IconButton}" Padding="6,2"
-                            ToolTip="收藏夹：点击条目跳转激活窗格"
-                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                            Click="FavoritesButton_Click"/>
-                    <ToggleButton x:Name="PreviewToggle" Content="&#xE723;" Width="30" Height="24"
-                                  Margin="12,0,0,0" Padding="0" FontSize="14"
-                                  FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                  ToolTip="预览窗格 (Alt+P)"
-                                  shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                                  Checked="PreviewToggle_Changed" Unchecked="PreviewToggle_Changed"/>
-                </StackPanel>
             </DockPanel>
         </Border>
         <!-- 全局预览栏：跟随最近聚焦窗格的选中项（分隔条在其左侧，可拖宽） -->

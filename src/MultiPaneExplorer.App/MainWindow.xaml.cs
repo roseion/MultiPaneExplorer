@@ -37,7 +37,11 @@ public partial class MainWindow : Window
     private double _uiScale = 1.0;
 
     /// <summary>合并标题栏的基准高度（XAML 中 CaptionBar 的 Height，未缩放值）。</summary>
-    private const double CaptionBarBaseHeight = 36;
+    private const double CaptionBarBaseHeight = 40;
+
+    private bool _showHidden;
+    private bool _showPreview;
+    private double _previewWidth = 260;
 
     public MainWindow()
     {
@@ -92,16 +96,7 @@ public partial class MainWindow : Window
 
         if (Enum.TryParse<PaneLayout>(session.Layout, out var layout))
         {
-            _layout = layout;
-            var radio = layout switch
-            {
-                PaneLayout.Three => LayoutThreeButton,
-                PaneLayout.FourGrid => LayoutFourGridButton,
-                PaneLayout.FourColumns => LayoutFourColumnsButton,
-                _ => LayoutTwoButton,
-            };
-            radio.IsChecked = true; // 触发 Layout_Checked → ApplyLayout
-            _layout = layout;       // Layout_Checked 内部已按 Tag 解析，这里保持一致
+            _layout = layout; // ctor 末尾按此值 ApplyLayout
         }
 
         for (var i = 0; i < _panes.Count && i < session.Panes.Count; i++)
@@ -111,18 +106,23 @@ public partial class MainWindow : Window
         if (session.ColumnWidths is not null || session.HiddenColumns is not null)
             Models.ColumnLayoutStore.Seed(session.ColumnWidths ?? [], session.HiddenColumns ?? []);
 
-        HiddenFilesToggle.IsChecked = session.ShowHiddenFiles; // 在标签恢复后下发全局设置
-
         if (session.UiScale > 0)
             _uiScale = Math.Clamp(session.UiScale, 0.8, 2.0);
         ApplyZoom();
 
         _lastFocusedPane = _panes[0];
 
-        // 预览栏：先恢复宽度，再按记忆的开关状态显示（_lastFocusedPane 已就位，可立即填充内容）
-        if (session.PreviewWidth >= PreviewBorder.MinWidth)
-            PreviewBorder.Width = session.PreviewWidth;
-        PreviewToggle.IsChecked = session.ShowPreview;
+        // 全局开关状态字段化（原标题栏控件的值迁入"查看"菜单）
+        _showHidden = session.ShowHiddenFiles;
+        if (_showHidden)
+            foreach (var pane in _panes)
+                pane.ForEachTab(vm => vm.ShowHiddenFiles = true);
+
+        if (session.PreviewWidth >= 180)
+            _previewWidth = session.PreviewWidth;
+        PreviewBorder.Width = _previewWidth;
+        _showPreview = session.ShowPreview;
+        ApplyPreviewVisibility();
     }
 
     private void SaveSession()
@@ -132,11 +132,11 @@ public partial class MainWindow : Window
             SessionStore.Save(new SessionState
             {
                 Layout = _layout.ToString(),
-                ShowHiddenFiles = HiddenFilesToggle.IsChecked == true,
+                ShowHiddenFiles = _showHidden,
                 UiScale = _uiScale,
                 ColumnWidths = new Dictionary<string, double>(Models.ColumnLayoutStore.Widths),
                 HiddenColumns = [.. Models.ColumnLayoutStore.Hidden],
-                ShowPreview = PreviewToggle.IsChecked == true,
+                ShowPreview = _showPreview,
                 PreviewWidth = double.IsNaN(PreviewBorder.Width) || PreviewBorder.Width <= 0
                     ? 260
                     : PreviewBorder.Width,
@@ -291,7 +291,8 @@ public partial class MainWindow : Window
         // Alt+P：预览窗格开关
         if (Keyboard.Modifiers == ModifierKeys.Alt && e.Key is Key.P)
         {
-            PreviewToggle.IsChecked = PreviewToggle.IsChecked != true;
+            _showPreview = !_showPreview;
+            ApplyPreviewVisibility();
             e.Handled = true;
             return;
         }
@@ -320,25 +321,94 @@ public partial class MainWindow : Window
 
     // ---- 预览窗格：跟随最近聚焦窗格的选中项；取消选中保留上次内容 ----
 
-    private void PreviewToggle_Changed(object sender, RoutedEventArgs e)
+    private void ApplyPreviewVisibility()
     {
         if (PreviewBorder is null || Preview is null)
             return;
-        var show = PreviewToggle.IsChecked == true;
-        PreviewBorder.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        PreviewSplitter.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        if (show)
+        PreviewBorder.Visibility = _showPreview ? Visibility.Visible : Visibility.Collapsed;
+        PreviewSplitter.Visibility = _showPreview ? Visibility.Visible : Visibility.Collapsed;
+        if (_showPreview)
             UpdatePreview();
     }
 
     private void UpdatePreview()
     {
-        if (PreviewToggle.IsChecked != true)
+        if (!_showPreview)
             return;
         var pane = _lastFocusedPane ?? _panes[0];
         if (pane.Vm.SelectedEntries.LastOrDefault() is not { } entry)
             return; // 无选中：保留上次预览内容（与资源管理器一致）
         Preview.Show(entry);
+    }
+
+    // ---- "查看"菜单：布局切换、显示隐藏文件、预览窗格（替代原标题栏控件区） ----
+
+    private void ViewMenuButton_Click(object sender, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu();
+
+        foreach (var (layout, title) in new[]
+                 {
+                     (PaneLayout.Two, "双栏"),
+                     (PaneLayout.Three, "三栏"),
+                     (PaneLayout.FourGrid, "四栏（田字）"),
+                     (PaneLayout.FourColumns, "四栏（并排）"),
+                 })
+        {
+            var item = new MenuItem
+            {
+                Header = title,
+                IsChecked = _layout == layout,
+                IsCheckable = true,
+            };
+            var target = layout;
+            item.Click += (_, _) =>
+            {
+                if (_layout != target)
+                    ApplyLayout(target);
+            };
+            menu.Items.Add(item);
+        }
+
+        menu.Items.Add(new Separator());
+
+        var hiddenItem = new MenuItem
+        {
+            Header = "显示隐藏文件",
+            IsCheckable = true,
+            IsChecked = _showHidden,
+        };
+        hiddenItem.Click += (_, _) =>
+        {
+            _showHidden = hiddenItem.IsChecked;
+            ApplyHiddenFiles();
+        };
+        menu.Items.Add(hiddenItem);
+
+        var previewItem = new MenuItem
+        {
+            Header = "预览窗格 (Alt+P)",
+            IsCheckable = true,
+            IsChecked = _showPreview,
+        };
+        previewItem.Click += (_, _) =>
+        {
+            _showPreview = previewItem.IsChecked;
+            ApplyPreviewVisibility();
+        };
+        menu.Items.Add(previewItem);
+
+        menu.PlacementTarget = ViewMenuButton;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        // 在 Click 处理器里同步打开会被随后的鼠标事件立即关闭，异步打开规避此问题
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+            new Action(() => menu.IsOpen = true));
+    }
+
+    private void ApplyHiddenFiles()
+    {
+        foreach (var pane in _panes)
+            pane.ForEachTab(vm => vm.ShowHiddenFiles = _showHidden);
     }
 
     // ---- 界面整体缩放：对根面板做 LayoutTransform，文字/图标/边距等比放大，随会话记忆 ----
@@ -433,9 +503,7 @@ public partial class MainWindow : Window
 
     private void HiddenFiles_Changed(object sender, RoutedEventArgs e)
     {
-        var show = HiddenFilesToggle?.IsChecked == true;
-        foreach (var pane in _panes)
-            pane.ForEachTab(vm => vm.ShowHiddenFiles = show);
+        // 保留空实现以兼容旧 XAML 引用（当前 XAML 已不再触发）
     }
 
     /// <summary>收藏夹菜单：条目跳转到最近聚焦的窗格（带 ✕ 移除）、"常用"分组（自动计数 Top5）、加入收藏。</summary>
