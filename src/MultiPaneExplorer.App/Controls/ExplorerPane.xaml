@@ -199,11 +199,21 @@
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,5,1"
-                                   VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,5,1"
                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <!-- 驱动器用量条 -->
+                            <Border Height="4" Width="110" Margin="21,1,0,2" CornerRadius="2"
+                                    Background="#E5E5E5"
+                                    ToolTip="{Binding UsageTooltip}"
+                                    Visibility="{Binding HasUsageBar, Converter={StaticResource BoolToVis}}">
+                                <Border Background="#0F6CBD" CornerRadius="2" HorizontalAlignment="Left"
+                                        Width="{Binding UsageBarWidth}"/>
+                            </Border>
                         </StackPanel>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>

@@ -356,12 +356,32 @@ public partial class PaneViewModel : ObservableObject
         if (TreeRoots.Count > 0)
             return;
         TreeRoots.Add(new FsTreeNode(SpecialLocations.RecycleBin, "回收站"));
+        foreach (var (title, folder) in KnownFolders())
+        {
+            if (folder.Length > 0 && Directory.Exists(folder))
+                TreeRoots.Add(new FsTreeNode(folder, title));
+        }
         foreach (var drive in DriveInfo.GetDrives()
                      .Where(d => d.IsReady)
                      .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
         {
             TreeRoots.Add(new FsTreeNode(drive.Name, name: drive.Name));
         }
+    }
+
+    /// <summary>known folders（树顶分组，快速访问等价物）；不存在的目录自动跳过。</summary>
+    private static (string Title, string Path)[] KnownFolders()
+    {
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        return
+        [
+            ("桌面", Environment.GetFolderPath(Environment.SpecialFolder.Desktop)),
+            ("文档", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)),
+            ("下载", Path.Combine(profile, "Downloads")),
+            ("图片", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)),
+            ("音乐", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)),
+            ("视频", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)),
+        ];
     }
 
     [RelayCommand]

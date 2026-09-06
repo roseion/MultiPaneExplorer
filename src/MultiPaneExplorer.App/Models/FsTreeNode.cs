@@ -25,6 +25,20 @@ public partial class FsTreeNode : ObservableObject
     /// <summary>节点图标（盘符/回收站/目录，按路径缓存，冻结可跨线程）。</summary>
     public ImageSource? Icon => FileIconCache.GetTreeIcon(FullPath, FullPath == SpecialLocations.RecycleBin);
 
+    /// <summary>驱动器用量比例（0-1）；非驱动器节点为 null。</summary>
+    public double? UsedFraction { get; }
+
+    /// <summary>驱动器用量提示（已用/总量）；非驱动器节点为 null。</summary>
+    public string? UsageTooltip { get; }
+
+    /// <summary>驱动器有用量信息（模板据此显示用量条）。</summary>
+    public bool HasUsageBar => UsedFraction.HasValue;
+
+    /// <summary>用量条填充宽度（模板用，条总宽 110px）。</summary>
+    public double UsageBarWidth => UsedFraction is { } fraction
+        ? Math.Round(110 * Math.Clamp(fraction, 0, 1))
+        : 0;
+
     private FsTreeNode(string fullPath, string name, bool isDummy)
     {
         FullPath = fullPath;
@@ -37,8 +51,45 @@ public partial class FsTreeNode : ObservableObject
     {
         FullPath = fullPath;
         Name = name ?? Path.GetFileName(fullPath.TrimEnd(Path.DirectorySeparatorChar));
+        if (TryGetDriveUsage(fullPath, out var fraction, out var tooltip))
+        {
+            UsedFraction = fraction;
+            UsageTooltip = tooltip;
+        }
         if (HasSubDirectories(fullPath))
             Children.Add(Dummy);
+    }
+
+    /// <summary>盘符根目录（如 C:\）读取用量；非盘符或不可读返回 false。</summary>
+    private static bool TryGetDriveUsage(string fullPath, out double fraction, out string tooltip)
+    {
+        (fraction, tooltip) = (0, string.Empty);
+        try
+        {
+            var root = Path.GetPathRoot(fullPath);
+            if (root is null
+                || root.Length > 3 // 排除 UNC（\\server\share）
+                || !string.Equals(
+                    root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var drive = new DriveInfo(root);
+            if (!drive.IsReady || drive.TotalSize <= 0)
+                return false;
+
+            var usedBytes = drive.TotalSize - drive.AvailableFreeSpace;
+            fraction = (double)usedBytes / drive.TotalSize;
+            tooltip = $"已用 {usedBytes / 1024.0 / 1024 / 1024:F1} GB / 共 {drive.TotalSize / 1024.0 / 1024 / 1024:F1} GB";
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public static FsTreeNode Dummy { get; } = new(string.Empty, string.Empty, isDummy: true);
