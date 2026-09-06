@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <Version>1.9.0</Version>
+    <AssemblyTitle>多栏资源管理器</AssemblyTitle>
+    <Product>多栏资源管理器</Product>
+    <Company>MultiPaneExplorer</Company>
   </PropertyGroup>
 
   <ItemGroup>

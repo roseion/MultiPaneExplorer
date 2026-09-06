@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -398,6 +399,13 @@ public partial class MainWindow : Window
         };
         menu.Items.Add(previewItem);
 
+        menu.Items.Add(new Separator());
+        menu.Items.Add(new MenuItem
+        {
+            Header = $"多栏资源管理器 v{GetVersion()}",
+            IsEnabled = false,
+        });
+
         menu.PlacementTarget = ViewMenuButton;
         menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
         // 在 Click 处理器里同步打开会被随后的鼠标事件立即关闭，异步打开规避此问题
@@ -409,6 +417,22 @@ public partial class MainWindow : Window
     {
         foreach (var pane in _panes)
             pane.ForEachTab(vm => vm.ShowHiddenFiles = _showHidden);
+    }
+
+    private static string GetVersion()
+    {
+        try
+        {
+            var assembly = typeof(MainWindow).Assembly;
+            return assembly.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
+                       ?.InformationalVersion
+                   ?? assembly.GetName().Version?.ToString(3)
+                   ?? "1.9.0";
+        }
+        catch
+        {
+            return "1.9.0";
+        }
     }
 
     // ---- 界面整体缩放：对根面板做 LayoutTransform，文字/图标/边距等比放大，随会话记忆 ----
