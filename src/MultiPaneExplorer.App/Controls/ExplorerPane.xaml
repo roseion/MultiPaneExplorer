@@ -54,6 +54,33 @@
         <ItemsPanelTemplate x:Key="ListPanel">
             <VirtualizingStackPanel Orientation="Vertical"/>
         </ItemsPanelTemplate>
+        <!-- Win11 风列头：透明底+悬停浅灰，右缘 Thumb 拖拽调宽 -->
+        <Style TargetType="GridViewColumnHeader">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridViewColumnHeader">
+                        <Grid>
+                            <Border x:Name="Bd" Background="Transparent"
+                                    BorderBrush="{StaticResource W11.ControlBorder}"
+                                    BorderThickness="0,0,1,1" Padding="6,4">
+                                <TextBlock Text="{TemplateBinding Content}" VerticalAlignment="Center"
+                                           FontSize="12" Foreground="{StaticResource W11.TextPrimary}"/>
+                            </Border>
+                            <Thumb x:Name="Resizer" Width="6" HorizontalAlignment="Right" Cursor="SizeWE"
+                                   Background="Transparent"
+                                   DragStarted="ColumnResizer_DragStarted"
+                                   DragDelta="ColumnResizer_DragDelta"
+                                   DragCompleted="ColumnResizer_DragCompleted"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="{StaticResource W11.WindowBackground}" Padding="4"
@@ -201,7 +228,8 @@
                       PreviewMouseMove="EntryList_PreviewMouseMove"
                       MouseLeftButtonUp="EntryList_MouseLeftButtonUp"
                       LostMouseCapture="EntryList_LostMouseCapture"
-                      GridViewColumnHeader.Click="ColumnHeader_Click">
+                      GridViewColumnHeader.Click="ColumnHeader_Click"
+                      ContextMenuOpening="EntryList_ContextMenuOpening">
                 <ListView.Style>
                     <Style TargetType="ListView">
                         <Style.Triggers>
@@ -362,6 +390,7 @@
                         <GridViewColumn x:Name="IconColumn" Header="" Width="26" CellTemplate="{StaticResource IconTemplate}"/>
                         <GridViewColumn x:Name="NameColumn" Header="名称" Width="280" CellTemplate="{StaticResource NameCellTemplate}"/>
                         <GridViewColumn x:Name="ModifiedColumn" Header="修改时间" Width="140" DisplayMemberBinding="{Binding Modified}"/>
+                        <GridViewColumn x:Name="CreatedColumn" Header="创建时间" Width="140" DisplayMemberBinding="{Binding Created}"/>
                         <GridViewColumn x:Name="TypeColumn" Header="类型" Width="90" DisplayMemberBinding="{Binding Type}"/>
                         <GridViewColumn x:Name="SizeColumn" Header="大小" Width="90" DisplayMemberBinding="{Binding Size}"/>
                     </GridView>

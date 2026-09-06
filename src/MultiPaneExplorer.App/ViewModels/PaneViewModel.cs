@@ -158,6 +158,9 @@ public partial class PaneViewModel : ObservableObject
                     ModifiedTime = isDirectory
                         ? Directory.GetLastWriteTime(path)
                         : File.GetLastWriteTime(path),
+                    CreatedTime = isDirectory
+                        ? Directory.GetCreationTime(path)
+                        : File.GetCreationTime(path),
                 });
 
                 if (batch.Count < 100)
@@ -955,6 +958,7 @@ public partial class PaneViewModel : ObservableObject
                             IsDirectory = isDirectory,
                             SizeBytes = isDirectory ? null : ((FileInfo)item).Length,
                             ModifiedTime = item.LastWriteTime,
+                            CreatedTime = item.CreationTime,
                         };
                     })
                     .Where(entry => FilterText.Length == 0
@@ -1011,6 +1015,8 @@ public partial class PaneViewModel : ObservableObject
         {
             ("Modified", false) => directoriesFirst.ThenBy(entry => entry.ModifiedTime),
             ("Modified", true) => directoriesFirst.ThenByDescending(entry => entry.ModifiedTime),
+            ("Created", false) => directoriesFirst.ThenBy(entry => entry.CreatedTime),
+            ("Created", true) => directoriesFirst.ThenByDescending(entry => entry.CreatedTime),
             ("Type", false) => directoriesFirst.ThenBy(entry => entry.Type, StringComparer.CurrentCultureIgnoreCase),
             ("Type", true) => directoriesFirst.ThenByDescending(entry => entry.Type, StringComparer.CurrentCultureIgnoreCase),
             ("Size", false) => directoriesFirst.ThenBy(entry => entry.SizeBytes ?? -1),

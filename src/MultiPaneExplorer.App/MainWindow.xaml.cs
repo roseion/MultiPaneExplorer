@@ -99,6 +99,10 @@ public partial class MainWindow : Window
         for (var i = 0; i < _panes.Count && i < session.Panes.Count; i++)
             _panes[i].RestoreState(session.Panes[i]);
 
+        // 列布局在窗格 Loaded 前种入，全局一份
+        if (session.ColumnWidths is not null || session.HiddenColumns is not null)
+            Models.ColumnLayoutStore.Seed(session.ColumnWidths ?? [], session.HiddenColumns ?? []);
+
         HiddenFilesToggle.IsChecked = session.ShowHiddenFiles; // 在标签恢复后下发全局设置
 
         if (session.UiScale > 0)
@@ -117,6 +121,8 @@ public partial class MainWindow : Window
                 Layout = _layout.ToString(),
                 ShowHiddenFiles = HiddenFilesToggle.IsChecked == true,
                 UiScale = _uiScale,
+                ColumnWidths = new Dictionary<string, double>(Models.ColumnLayoutStore.Widths),
+                HiddenColumns = [.. Models.ColumnLayoutStore.Hidden],
                 Panes = _panes.Select(pane => pane.CaptureState()).ToList(),
             });
         }

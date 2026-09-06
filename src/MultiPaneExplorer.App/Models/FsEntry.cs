@@ -12,6 +12,9 @@ public sealed class FsEntry : System.ComponentModel.INotifyPropertyChanged
     public long? SizeBytes { get; init; }
     public DateTime ModifiedTime { get; init; }
 
+    /// <summary>创建时间（详细信息视图的可选列）；回收站/驱动器条目无此值。</summary>
+    public DateTime CreatedTime { get; init; }
+
     /// <summary>回收站视图条目对应的元数据；普通文件系统条目为 null。</summary>
     public FileOps.Core.RecycleBinEntry? BinEntry { get; init; }
 
@@ -59,6 +62,8 @@ public sealed class FsEntry : System.ComponentModel.INotifyPropertyChanged
     public string Size => IsDirectory ? string.Empty : FormatSize(SizeBytes ?? 0);
 
     public string Modified => ModifiedTime == default ? string.Empty : ModifiedTime.ToString("yyyy-MM-dd HH:mm");
+
+    public string Created => CreatedTime == default ? string.Empty : CreatedTime.ToString("yyyy-MM-dd HH:mm");
 
     internal static string FormatSize(long bytes) => bytes switch
     {

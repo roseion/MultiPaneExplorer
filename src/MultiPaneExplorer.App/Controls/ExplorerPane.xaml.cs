@@ -44,6 +44,7 @@ public partial class ExplorerPane : UserControl
     {
         ["Name"] = "名称",
         ["Modified"] = "修改时间",
+        ["Created"] = "创建时间",
         ["Type"] = "类型",
         ["Size"] = "大小",
     };
@@ -54,6 +55,7 @@ public partial class ExplorerPane : UserControl
         Vm = CreateTab();
         _tabs.Add(Vm);
         DataContext = Vm;
+        ColumnLayoutStore.Changed += ApplyColumnLayout; // 列布局全局共享，任一窗格变更全体同步
         Loaded += (_, _) =>
         {
             if (_initialized)
@@ -61,6 +63,7 @@ public partial class ExplorerPane : UserControl
             _initialized = true;
             Vm.Initialize(InitialPath);
             UpdateSortHeaders();
+            ApplyColumnLayout();
             RefreshBreadcrumb();
             RefreshTabStrip();
             if (FocusOnLoad)
@@ -719,11 +722,19 @@ public partial class ExplorerPane : UserControl
 
     private void ColumnHeader_Click(object sender, RoutedEventArgs e)
     {
+        // 列宽拖拽结束时 Header 会再收到一次 Click，吞掉避免误排序
+        if (_suppressHeaderClick)
+        {
+            _suppressHeaderClick = false;
+            return;
+        }
+
         if (e.OriginalSource is not GridViewColumnHeader { Column: not null } header)
             return;
 
         var tag = header.Column == NameColumn ? "Name"
             : header.Column == ModifiedColumn ? "Modified"
+            : header.Column == CreatedColumn ? "Created"
             : header.Column == TypeColumn ? "Type"
             : header.Column == SizeColumn ? "Size"
             : null;
@@ -735,11 +746,117 @@ public partial class ExplorerPane : UserControl
         UpdateSortHeaders();
     }
 
+    // ---- 列管理：列宽拖拽、右键显隐、随会话记忆（全局共享） ----
+
+    private bool _suppressHeaderClick;
+
+    private string? ColumnKey(GridViewColumn column) => column == NameColumn ? "Name"
+        : column == ModifiedColumn ? "Modified"
+        : column == CreatedColumn ? "Created"
+        : column == TypeColumn ? "Type"
+        : column == SizeColumn ? "Size"
+        : null;
+
+    private static double DefaultColumnWidth(string key) => key switch
+    {
+        "Name" => 280,
+        "Modified" or "Created" => 140,
+        _ => 90,
+    };
+
+    private void ColumnResizer_DragStarted(object sender, DragStartedEventArgs e) => _suppressHeaderClick = true;
+
+    private void ColumnResizer_DragDelta(object sender, DragDeltaEventArgs e)
+    {
+        if (sender is not Thumb { TemplatedParent: GridViewColumnHeader { Column: not null } header }
+            || ColumnKey(header.Column) is not { } key
+            || header.Column.Width <= 0)
+            return;
+
+        header.Column.Width = Math.Round(Math.Clamp(header.Column.Width + e.HorizontalChange, 40, 800));
+        ColumnLayoutStore.SetWidth(key, header.Column.Width);
+    }
+
+    private void ColumnResizer_DragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        // Click 在 DragCompleted 之后同步触发，用低优先级队列复位，保证吞掉的只是本次拖拽附带的 Click
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+            new Action(() => _suppressHeaderClick = false));
+    }
+
+    /// <summary>列头右键：显隐开关与重置列宽（替代文件右键菜单）。</summary>
+    private void EntryList_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (e.OriginalSource is not GridViewColumnHeader { Column: not null } header
+            || ColumnKey(header.Column) is null)
+            return;
+
+        e.Handled = true; // 阻止 ListView 的文件右键菜单
+        var menu = BuildColumnMenu();
+        menu.PlacementTarget = EntryList;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+        // 右键事件处理过程中同步打开会被随后的鼠标事件立即关闭（同面包屑下拉坑），异步打开规避
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+            new Action(() => menu.IsOpen = true));
+    }
+
+    private ContextMenu BuildColumnMenu()
+    {
+        var menu = new ContextMenu();
+        foreach (var (column, title) in new[]
+                 {
+                     (ModifiedColumn, "修改时间"),
+                     (CreatedColumn, "创建时间"),
+                     (TypeColumn, "类型"),
+                     (SizeColumn, "大小"),
+                 })
+        {
+            var key = ColumnKey(column)!;
+            var item = new MenuItem
+            {
+                Header = title,
+                IsCheckable = true,
+                IsChecked = !ColumnLayoutStore.Hidden.Contains(key),
+            };
+            item.Click += (_, _) => ColumnLayoutStore.SetHidden(key, !item.IsChecked);
+            menu.Items.Add(item);
+        }
+
+        menu.Items.Add(new Separator());
+        var reset = new MenuItem { Header = "重置列宽" };
+        reset.Click += (_, _) => ColumnLayoutStore.Reset();
+        menu.Items.Add(reset);
+        return menu;
+    }
+
+    /// <summary>按全局列布局应用各列宽度与显隐（名称列恒显示）。</summary>
+    private void ApplyColumnLayout()
+    {
+        ApplyColumn(NameColumn, "Name");
+        ApplyColumn(ModifiedColumn, "Modified");
+        ApplyColumn(CreatedColumn, "Created");
+        ApplyColumn(TypeColumn, "Type");
+        ApplyColumn(SizeColumn, "Size");
+
+        void ApplyColumn(GridViewColumn column, string key)
+        {
+            if (key != "Name" && ColumnLayoutStore.Hidden.Contains(key))
+            {
+                column.Width = 0;
+                return;
+            }
+            column.Width = ColumnLayoutStore.Widths.TryGetValue(key, out var width) && width >= 40
+                ? width
+                : DefaultColumnWidth(key);
+        }
+    }
+
     /// <summary>按当前排序列与方向刷新列头箭头（▲/▼）。</summary>
     public void UpdateSortHeaders()
     {
         SetHeader(NameColumn, "Name");
         SetHeader(ModifiedColumn, "Modified");
+        SetHeader(CreatedColumn, "Created");
         SetHeader(TypeColumn, "Type");
         SetHeader(SizeColumn, "Size");
 

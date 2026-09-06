@@ -98,4 +98,26 @@ public sealed class SessionStoreTests : IDisposable
 
         Assert.Null(SessionStore.TryLoad(_filePath));
     }
+
+    /// <summary>详细信息视图的全局列布局（列宽+隐藏列）随会话持久化。</summary>
+    [Fact]
+    public void Save_TryLoad_PreservesColumnLayout()
+    {
+        var original = new SessionState
+        {
+            ColumnWidths = new Dictionary<string, double> { ["Name"] = 300, ["Created"] = 160 },
+            HiddenColumns = ["Type", "Size"],
+        };
+
+        SessionStore.Save(original, _filePath);
+        var restored = SessionStore.TryLoad(_filePath);
+
+        Assert.NotNull(restored);
+        Assert.NotNull(restored.ColumnWidths);
+        Assert.Equal(300, restored.ColumnWidths!["Name"]);
+        Assert.Equal(160, restored.ColumnWidths["Created"]);
+        Assert.NotNull(restored.HiddenColumns);
+        Assert.Contains("Type", restored.HiddenColumns!);
+        Assert.Contains("Size", restored.HiddenColumns);
+    }
 }

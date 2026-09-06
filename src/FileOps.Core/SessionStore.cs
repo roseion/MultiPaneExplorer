@@ -33,6 +33,12 @@ public sealed class SessionState
     /// <summary>界面整体缩放（Ctrl+= / Ctrl+- 调节，1.0 为原始大小）。</summary>
     public double UiScale { get; set; } = 1.0;
 
+    /// <summary>详细信息视图的全局列宽（列键→宽度），随会话记忆。</summary>
+    public Dictionary<string, double>? ColumnWidths { get; set; }
+
+    /// <summary>详细信息视图隐藏的列（名称列恒显示），随会话记忆。</summary>
+    public List<string>? HiddenColumns { get; set; }
+
     public List<PaneState> Panes { get; set; } = [];
 }
 
