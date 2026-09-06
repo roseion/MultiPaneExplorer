@@ -109,6 +109,8 @@ public partial class ExplorerPane : UserControl
                 QueueThumbnailsForCurrentEntries();
             else if (e.PropertyName == nameof(PaneViewModel.ShowTree))
                 UpdateTreeColumnVisibility();
+            else if (e.PropertyName is nameof(PaneViewModel.FilterText) or nameof(PaneViewModel.SearchSubdirectories))
+                UpdateLocationColumnVisibility();
         };
         tab.EntryFocusRequested += () =>
         {
@@ -1014,6 +1016,12 @@ public partial class ExplorerPane : UserControl
                 e.Handled = true;
                 break;
         }
+    }
+
+    /// <summary>"位置"列：递归搜索时自动显示相对路径，清空搜索后隐藏（不进全局列布局，不参与排序）。</summary>
+    private void UpdateLocationColumnVisibility()
+    {
+        LocationColumn.Width = Vm.IsSearchResultsView ? 180 : 0;
     }
 
     // ---- 跨窗格拖拽：默认同盘移动、Ctrl=复制、Shift=移动、跨盘=复制 ----

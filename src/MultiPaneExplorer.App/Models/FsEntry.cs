@@ -15,6 +15,9 @@ public sealed class FsEntry : System.ComponentModel.INotifyPropertyChanged
     /// <summary>创建时间（详细信息视图的可选列）；回收站/驱动器条目无此值。</summary>
     public DateTime CreatedTime { get; init; }
 
+    /// <summary>递归搜索结果相对搜索根目录的子路径（"位置"列）；普通列表为空。</summary>
+    public string Location { get; init; } = string.Empty;
+
     /// <summary>回收站视图条目对应的元数据；普通文件系统条目为 null。</summary>
     public FileOps.Core.RecycleBinEntry? BinEntry { get; init; }
 

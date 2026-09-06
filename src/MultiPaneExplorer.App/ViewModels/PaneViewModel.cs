@@ -154,6 +154,7 @@ public partial class PaneViewModel : ObservableObject
             await foreach (var path in _search.SearchAsync(root, pattern, cts.Token))
             {
                 var isDirectory = Directory.Exists(path);
+                var relative = Path.GetRelativePath(root, path);
                 batch.Add(new FsEntry
                 {
                     Name = Path.GetFileName(path),
@@ -166,6 +167,7 @@ public partial class PaneViewModel : ObservableObject
                     CreatedTime = isDirectory
                         ? Directory.GetCreationTime(path)
                         : File.GetCreationTime(path),
+                    Location = Path.GetDirectoryName(relative) is { Length: > 0 } folder ? folder : string.Empty,
                 });
 
                 if (batch.Count < 100)
