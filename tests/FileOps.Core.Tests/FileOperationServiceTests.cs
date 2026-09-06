@@ -254,6 +254,22 @@ public sealed class FileOperationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CopyIntoAsync_ReportsItemCounts()
+    {
+        var target = Target();
+        var s1 = WriteFile(Path.Combine("src", "a.txt"), "aaaa");
+        var s2 = WriteFile(Path.Combine("src", "b.txt"), "bb");
+
+        var sink = new List<CopyProgress>();
+        var result = await _service.CopyIntoAsync([s1, s2], target,
+            new CopyOptions { Progress = new CollectingProgress(sink) });
+
+        Assert.False(result.HasErrors);
+        Assert.Equal(2, sink.Last().TotalItems);
+        Assert.Equal(2, sink.Last().DoneItems);
+    }
+
+    [Fact]
     public async Task Rename_ChangesName()
     {
         var file = WriteFile(Path.Combine("ren", "a.txt"), "内容");

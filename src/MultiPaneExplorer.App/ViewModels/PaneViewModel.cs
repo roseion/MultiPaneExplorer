@@ -604,13 +604,18 @@ public partial class PaneViewModel : ObservableObject
         var target = CurrentPath;
         var verb = move ? "移动" : "粘贴";
         var cts = new CancellationTokenSource();
+        var progressWindow = new Views.TransferProgressDialog(move ? "移动" : "复制", sources.Count, cts);
         ConflictDecision? remembered = null;
         var options = new CopyOptions
         {
-            Progress = new Progress<CopyProgress>(p => StatusText =
-                p.TotalBytes > 0 && p.DoneBytes >= p.TotalBytes
-                    ? $"{verb}完成，正在刷新列表…"
-                    : $"正在{verb}… {FsEntry.FormatSize(p.DoneBytes)} / {FsEntry.FormatSize(p.TotalBytes)}（{p.Percent}%）"),
+            Progress = new Progress<CopyProgress>(p =>
+            {
+                StatusText =
+                    p.TotalBytes > 0 && p.DoneBytes >= p.TotalBytes
+                        ? $"{verb}完成，正在刷新列表…"
+                        : $"正在{verb}… {FsEntry.FormatSize(p.DoneBytes)} / {FsEntry.FormatSize(p.TotalBytes)}（{p.Percent}%）";
+                progressWindow.Report(p);
+            }),
             OnConflict = context =>
             {
                 if (remembered.HasValue)
@@ -631,6 +636,8 @@ public partial class PaneViewModel : ObservableObject
 
         _isBusy = true;
         StatusText = $"正在{verb} {sources.Count} 个项目…";
+        progressWindow.Owner = System.Windows.Application.Current.MainWindow;
+        progressWindow.ShowDelayed();
         try
         {
             var result = await Task.Run(() => move
@@ -657,6 +664,7 @@ public partial class PaneViewModel : ObservableObject
         finally
         {
             _isBusy = false;
+            progressWindow.Complete();
         }
 
         if (move)

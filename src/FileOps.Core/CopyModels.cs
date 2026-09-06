@@ -12,8 +12,13 @@ public sealed record ConflictItem(
 /// <summary>交给冲突处理回调的上下文；TotalConflicts 为 -1 表示总数未知。</summary>
 public sealed record ConflictContext(ConflictItem Item, int Index, int TotalConflicts);
 
-/// <summary>复制进度。DoneBytes 与 TotalBytes 均为字节。</summary>
-public sealed record CopyProgress(long TotalBytes, long DoneBytes, string CurrentFile)
+/// <summary>复制进度。DoneBytes/TotalBytes 为字节，DoneItems/TotalItems 为根级项目计数。</summary>
+public sealed record CopyProgress(
+    long TotalBytes,
+    long DoneBytes,
+    string CurrentFile,
+    long DoneItems = 0,
+    long TotalItems = 0)
 {
     public int Percent => TotalBytes <= 0 ? 100 : (int)Math.Min(100, DoneBytes * 100 / TotalBytes);
 }

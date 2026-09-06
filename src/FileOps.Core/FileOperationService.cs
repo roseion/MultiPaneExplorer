@@ -23,6 +23,7 @@ public sealed class FileOperationService : IFileOperationService
         var state = new CopyState(options, cancellationToken)
         {
             TotalBytes = sources.Sum(SafeSize),
+            TotalItems = sources.Count,
         };
 
         foreach (var source in sources)
@@ -50,6 +51,7 @@ public sealed class FileOperationService : IFileOperationService
             {
                 state.Errors.Add($"复制失败：{source}（{ex.Message}）");
             }
+            state.DoneItems++;
         }
 
         state.ReportProgress(currentFile: string.Empty, final: true);
@@ -73,6 +75,7 @@ public sealed class FileOperationService : IFileOperationService
         var state = new CopyState(options, cancellationToken)
         {
             TotalBytes = sources.Sum(SafeSize),
+            TotalItems = sources.Count,
         };
 
         foreach (var source in sources)
@@ -101,6 +104,7 @@ public sealed class FileOperationService : IFileOperationService
             {
                 state.Errors.Add($"移动失败：{source}（{ex.Message}）");
             }
+            state.DoneItems++;
         }
 
         state.ReportProgress(currentFile: string.Empty, final: true);
@@ -487,6 +491,8 @@ public sealed class FileOperationService : IFileOperationService
 
         public long TotalBytes { get; set; }
         public long DoneBytes { get; set; }
+        public long TotalItems { get; set; }
+        public long DoneItems { get; set; }
         public int CopiedCount { get; set; }
         public int SkippedCount { get; set; }
         public int ConflictIndex { get; set; }
@@ -542,7 +548,9 @@ public sealed class FileOperationService : IFileOperationService
             Progress.Report(new CopyProgress(
                 TotalBytes,
                 final ? TotalBytes : Math.Min(DoneBytes, TotalBytes),
-                currentFile));
+                currentFile,
+                DoneItems,
+                TotalItems));
         }
 
         private static ConflictItem MakeConflictItem(string source, string destination, bool sourceIsDirectory)
