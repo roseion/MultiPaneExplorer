@@ -42,6 +42,18 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- 贴靠布局弹窗里的分区格（悬停高亮） -->
+        <Style x:Key="SnapZoneStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource W11.AccentTint}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource W11.Accent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="CaptionCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -67,7 +79,8 @@
     <DockPanel x:Name="RootPanel">
         <!-- 合并后的标题栏（40px Mica）：左应用名，中部拖拽区，右区功能图标钮+自绘窗口按钮；
              布局切换/显示隐藏文件/预览收进"查看"菜单，保持标题栏极简（Explorer 式） -->
-        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="40" Background="{StaticResource W11.LayerBackground}">
+        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="40" Background="{StaticResource W11.LayerBackground}"
+                MouseRightButtonUp="CaptionBar_MouseRightButtonUp">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
@@ -100,7 +113,8 @@
                     <Button Style="{StaticResource CaptionButtonStyle}" Content="&#xE921;"
                             ToolTip="最小化" Click="MinimizeButton_Click"/>
                     <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButtonStyle}" Content="&#xE922;"
-                            ToolTip="最大化" Click="MaximizeButton_Click"/>
+                            ToolTip="最大化" Click="MaximizeButton_Click"
+                            MouseEnter="MaximizeButton_MouseEnter" MouseLeave="MaximizeButton_MouseLeave"/>
                     <Button Style="{StaticResource CaptionCloseButtonStyle}" Content="&#xE8BB;"
                             ToolTip="关闭" Click="CloseButton_Click"/>
                 </StackPanel>
@@ -109,6 +123,45 @@
                            Foreground="{StaticResource W11.TextSecondary}"/>
             </DockPanel>
         </Border>
+        <!-- Win11 贴靠布局弹窗：最大化钮悬停 400ms 出现，左右两分 + 四宫格 -->
+        <Popup x:Name="SnapPopup" PlacementTarget="{Binding ElementName=MaximizeButton}" Placement="Bottom"
+               AllowsTransparency="True" StaysOpen="False" Focusable="False" PopupAnimation="Fade"
+               MouseLeave="SnapPopup_MouseLeave">
+            <Border Background="{StaticResource W11.MenuBackground}" BorderBrush="{StaticResource W11.ControlBorder}"
+                    BorderThickness="1" CornerRadius="8" Padding="12" Margin="6">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.18"/>
+                </Border.Effect>
+                <StackPanel Orientation="Horizontal">
+                    <Grid Width="72" Height="44" Margin="0,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource SnapZoneStyle}" Tag="Left" MouseLeftButtonDown="SnapZone_Click"/>
+                        <Border Grid.Column="1" Style="{StaticResource SnapZoneStyle}" Tag="Right" Margin="2,0,0,0"
+                                MouseLeftButtonDown="SnapZone_Click"/>
+                    </Grid>
+                    <Grid Width="72" Height="44">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource SnapZoneStyle}" Tag="LeftTop" MouseLeftButtonDown="SnapZone_Click"/>
+                        <Border Grid.Column="1" Style="{StaticResource SnapZoneStyle}" Tag="RightTop" Margin="2,0,0,0"
+                                MouseLeftButtonDown="SnapZone_Click"/>
+                        <Border Grid.Row="1" Style="{StaticResource SnapZoneStyle}" Tag="LeftBottom" Margin="0,2,0,0"
+                                MouseLeftButtonDown="SnapZone_Click"/>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource SnapZoneStyle}" Tag="RightBottom"
+                                Margin="2,2,0,0" MouseLeftButtonDown="SnapZone_Click"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Popup>
         <!-- 全局预览栏（白底）：跟随最近聚焦窗格的选中项（分隔条在其左侧，可拖宽） -->
         <Border x:Name="PreviewBorder" DockPanel.Dock="Right" Width="260" MinWidth="180" MaxWidth="480"
                 Background="{StaticResource W11.CardBackground}"

@@ -437,6 +437,115 @@ public partial class MainWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
+    // ---- 标题栏原生交互：右键系统菜单 + 最大化钮悬停贴靠布局弹窗 ----
+
+    /// <summary>标题栏空白处右键：弹出系统菜单（移动/大小/最小化/最大化/关闭），坐标转到屏幕系。</summary>
+    private void CaptionBar_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is System.Windows.Controls.Control)
+            return; // 命令按钮上不弹系统菜单
+        SystemCommands.ShowSystemMenu(this, PointToScreen(e.GetPosition(this)));
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _snapShowTimer;
+
+    private void MaximizeButton_MouseEnter(object sender, MouseEventArgs e)
+    {
+        _snapShowTimer ??= new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(400),
+        };
+        _snapShowTimer.Tick += (_, _) =>
+        {
+            _snapShowTimer.Stop();
+            SnapPopup.IsOpen = true;
+        };
+        _snapShowTimer.Stop();
+        _snapShowTimer.Start();
+    }
+
+    private void MaximizeButton_MouseLeave(object sender, MouseEventArgs e) => _snapShowTimer?.Stop();
+
+    private void SnapPopup_MouseLeave(object sender, MouseEventArgs e) => SnapPopup.IsOpen = false;
+
+    private void SnapZone_Click(object sender, MouseButtonEventArgs e)
+    {
+        SnapPopup.IsOpen = false;
+        if (sender is Border { Tag: string zone })
+            SnapTo(zone);
+    }
+
+    /// <summary>把窗口贴靠到当前显示器工作区的指定分区。</summary>
+    private void SnapTo(string zone)
+    {
+        var dpi = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+        if (dpi <= 0)
+            dpi = 1.0;
+        var work = GetWorkAreaPixels();
+
+        double x = work.Left / dpi, y = work.Top / dpi;
+        double w = (work.Right - work.Left) / dpi, h = (work.Bottom - work.Top) / dpi;
+        var (rx, ry, rw, rh) = zone switch
+        {
+            "Right" => (x + w / 2, y, w / 2, h),
+            "LeftTop" => (x, y, w / 2, h / 2),
+            "RightTop" => (x + w / 2, y, w / 2, h / 2),
+            "LeftBottom" => (x, y + h / 2, w / 2, h / 2),
+            "RightBottom" => (x + w / 2, y + h / 2, w / 2, h / 2),
+            _ => (x, y, w / 2, h), // Left
+        };
+
+        if (WindowState != WindowState.Normal)
+            WindowState = WindowState.Normal;
+        Left = rx;
+        Top = ry;
+        Width = rw;
+        Height = rh;
+    }
+
+    private RECT GetWorkAreaPixels()
+    {
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        if (hwnd != IntPtr.Zero)
+        {
+            var monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            var info = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
+            if (monitor != IntPtr.Zero && GetMonitorInfo(monitor, ref info))
+                return info.rcWork;
+        }
+
+        // 兜底：主屏工作区按当前 DPI 折算为像素
+        var wa = SystemParameters.WorkArea;
+        var dpi = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+        return new RECT { Left = 0, Top = 0, Right = (int)(wa.Right * dpi), Bottom = (int)(wa.Bottom * dpi) };
+    }
+
+    private const uint MONITOR_DEFAULTTONEAREST = 2;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
     private void Window_StateChanged(object? sender, EventArgs e)
     {
         // 无边框窗口最大化时会向四周越出一个边框宽度，补边距防止内容被裁/盖住任务栏
