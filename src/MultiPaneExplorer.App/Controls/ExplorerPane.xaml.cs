@@ -68,6 +68,7 @@ public partial class ExplorerPane : UserControl
             Vm.Initialize(InitialPath);
             UpdateSortHeaders();
             ApplyColumnLayout();
+            ApplyViewMode();
             RefreshBreadcrumb();
             RefreshTabStrip();
             if (FocusOnLoad)
@@ -110,7 +111,10 @@ public partial class ExplorerPane : UserControl
             if (!ReferenceEquals(tab, Vm))
                 return;
             if (e.PropertyName == nameof(PaneViewModel.ViewMode))
+            {
+                ApplyViewMode();
                 QueueThumbnailsForCurrentEntries();
+            }
             else if (e.PropertyName == nameof(PaneViewModel.ShowTree))
                 UpdateTreeColumnVisibility();
             else if (e.PropertyName is nameof(PaneViewModel.FilterText) or nameof(PaneViewModel.SearchSubdirectories))
@@ -168,6 +172,7 @@ public partial class ExplorerPane : UserControl
         RefreshTabStrip();
         QueueThumbnailsForCurrentEntries();
         RefreshBreadcrumb();
+        ApplyViewMode();
         UpdateTreeColumnVisibility();
         EntryList.Focus();
     }
@@ -306,6 +311,7 @@ public partial class ExplorerPane : UserControl
         CrumbBar.Visibility = Visibility.Visible;
         RefreshBreadcrumb();
         UpdateSortHeaders(); // 回收站视图下"修改时间"列头切换为"删除时间"
+        ApplyViewMode();     // "此电脑"页切换驱动器宽卡
 
         if (path is null)
             return;
@@ -317,6 +323,46 @@ public partial class ExplorerPane : UserControl
         finally
         {
             _revealing = false;
+        }
+    }
+
+    /// <summary>
+    /// 统一裁决列表呈现：此电脑页 = 驱动器宽卡（Explorer"设备和驱动器"式）；
+    /// 其余按 ViewMode（详细信息/大图标/列表）。代码后置切换，避免本地值与样式触发器的优先级纠缠。
+    /// </summary>
+    private void ApplyViewMode()
+    {
+        ScrollViewer.SetHorizontalScrollBarVisibility(EntryList, ScrollBarVisibility.Auto);
+
+        if (Vm.CurrentPath is null)
+        {
+            EntryList.View = null;
+            EntryList.ItemTemplate = (DataTemplate)FindResource("DriveCardTemplate");
+            EntryList.ItemsPanel = (ItemsPanelTemplate)FindResource("DriveCardsPanel");
+            ScrollViewer.SetHorizontalScrollBarVisibility(EntryList, ScrollBarVisibility.Disabled);
+            return;
+        }
+
+        EntryList.ItemTemplate = null;
+        EntryList.ItemsPanel = (ItemsPanelTemplate)FindResource("DetailsItemsPanel");
+        switch (Vm.ViewMode)
+        {
+            case "LargeIcons":
+                EntryList.View = null;
+                EntryList.ItemTemplate = (DataTemplate)FindResource("LargeIconTemplate");
+                EntryList.ItemsPanel = (ItemsPanelTemplate)FindResource("LargeIconsPanel");
+                // 禁横向滚动条：让 WrapPanel 按可视宽度换行，否则内容宽无限增长永远不换行
+                ScrollViewer.SetHorizontalScrollBarVisibility(EntryList, ScrollBarVisibility.Disabled);
+                break;
+            case "List":
+                EntryList.View = null;
+                EntryList.ItemTemplate = (DataTemplate)FindResource("ListTemplate");
+                EntryList.ItemsPanel = (ItemsPanelTemplate)FindResource("ListPanel");
+                ScrollViewer.SetHorizontalScrollBarVisibility(EntryList, ScrollBarVisibility.Disabled);
+                break;
+            default:
+                EntryList.View = EntryView; // x:Name 的 GridView（详细信息）
+                break;
         }
     }
 
