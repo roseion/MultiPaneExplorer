@@ -239,6 +239,7 @@
                       PreviewMouseMove="EntryList_PreviewMouseMove"
                       MouseLeftButtonUp="EntryList_MouseLeftButtonUp"
                       LostMouseCapture="EntryList_LostMouseCapture"
+                      PreviewTextInput="EntryList_PreviewTextInput"
                       GridViewColumnHeader.Click="ColumnHeader_Click"
                       ContextMenuOpening="EntryList_ContextMenuOpening">
                 <ListView.Style>

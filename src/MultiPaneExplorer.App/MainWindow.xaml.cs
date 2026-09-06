@@ -278,6 +278,10 @@ public partial class MainWindow : Window
                     _ = RunUndoRedoAsync(undo: false);
                     e.Handled = true;
                     return;
+                case Key.N:
+                    new MainWindow().Show(); // 进程内新窗口（与资源管理器 Ctrl+N 一致）
+                    e.Handled = true;
+                    return;
             }
         }
 

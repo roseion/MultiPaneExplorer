@@ -56,6 +56,7 @@ public partial class ExplorerPane : UserControl
         _tabs.Add(Vm);
         DataContext = Vm;
         ColumnLayoutStore.Changed += ApplyColumnLayout; // 列布局全局共享，任一窗格变更全体同步
+        _typeAheadTimer.Tick += (_, _) => ResetTypeAhead();
         Loaded += (_, _) =>
         {
             if (_initialized)
@@ -1022,6 +1023,60 @@ public partial class ExplorerPane : UserControl
     private void UpdateLocationColumnVisibility()
     {
         LocationColumn.Width = Vm.IsSearchResultsView ? 180 : 0;
+    }
+
+    // ---- 键入跳转（type-ahead）：列表聚焦时直接输入名称匹配条目，1s 无输入重置 ----
+
+    private readonly System.Windows.Threading.DispatcherTimer _typeAheadTimer = new()
+    {
+        Interval = TimeSpan.FromSeconds(1),
+    };
+    private string _typeAheadBuffer = string.Empty;
+    private string? _typeAheadLastChar;
+
+    private void EntryList_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        // 重命名/地址栏等文本框内的输入放行
+        if (e.OriginalSource is TextBoxBase || Keyboard.Modifiers != ModifierKeys.None)
+            return;
+
+        _typeAheadTimer.Stop();
+        // 同一字符连按（缓冲仍为单字符）= 在匹配项之间循环；否则累积缓冲
+        var isRepeat = _typeAheadLastChar == e.Text && _typeAheadBuffer.Length == 1;
+        _typeAheadBuffer = isRepeat ? e.Text : _typeAheadBuffer + e.Text;
+        _typeAheadLastChar = e.Text;
+
+        var candidates = Vm.Entries
+            .Where(entry => entry.Name.StartsWith(_typeAheadBuffer, StringComparison.CurrentCultureIgnoreCase))
+            .ToList();
+        if (candidates.Count == 0 && _typeAheadBuffer.Length > 1)
+        {
+            // 缓冲积累过头：退回最后一个字符再试
+            _typeAheadBuffer = _typeAheadBuffer[^1..];
+            candidates = Vm.Entries
+                .Where(entry => entry.Name.StartsWith(_typeAheadBuffer, StringComparison.CurrentCultureIgnoreCase))
+                .ToList();
+        }
+
+        if (candidates.Count > 0)
+        {
+            var currentIndex = candidates.IndexOf(EntryList.SelectedItem as FsEntry);
+            var match = isRepeat && candidates.Count > 1
+                ? candidates[(currentIndex + 1) % candidates.Count]
+                : candidates[0];
+            EntryList.SelectedItem = match;
+            EntryList.ScrollIntoView(match);
+        }
+
+        _typeAheadTimer.Start();
+        e.Handled = true;
+    }
+
+    private void ResetTypeAhead()
+    {
+        _typeAheadTimer.Stop();
+        _typeAheadBuffer = string.Empty;
+        _typeAheadLastChar = null;
     }
 
     // ---- 跨窗格拖拽：默认同盘移动、Ctrl=复制、Shift=移动、跨盘=复制 ----
