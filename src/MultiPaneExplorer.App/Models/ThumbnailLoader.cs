@@ -7,7 +7,8 @@ namespace MultiPaneExplorer.App.Models;
 
 /// <summary>
 /// 大图标视图的异步缩略图加载。常见图片用 WPF 解码（DecodePixelWidth=96，即时释放文件句柄），
-/// 其余类型回退系统 32px 大图标（不放大）。并发 2，结果冻结后回填 FsEntry.LargeIcon。
+/// 视频/PDF 走 Shell 缩略图提供程序（IShellItemImageFactory），其余回退系统 32px 大图标（不放大）。
+/// 并发 2，结果冻结后回填 FsEntry.LargeIcon。
 /// </summary>
 public static class ThumbnailLoader
 {
@@ -18,6 +19,13 @@ public static class ThumbnailLoader
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff", ".ico",
+    };
+
+    /// <summary>依赖系统缩略图提供程序的类型（视频/PDF），失败回退系统大图标。</summary>
+    private static readonly HashSet<string> ShellThumbnailExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".m4v", ".mkv", ".webm", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".ts", ".flv",
+        ".pdf",
     };
 
     /// <summary>入队加载；已完成（LargeIcon 非空）的条目自动跳过。</summary>
@@ -43,8 +51,10 @@ public static class ThumbnailLoader
             if (entry.LargeIcon is not null)
                 return;
 
+            var extension = Path.GetExtension(entry.Name);
+            var isShellThumbnail = ShellThumbnailExtensions.Contains(extension);
             ImageSource? source;
-            if (entry.IsDirectory || !ImageExtensions.Contains(Path.GetExtension(entry.Name)))
+            if (entry.IsDirectory || (!ImageExtensions.Contains(extension) && !isShellThumbnail))
             {
                 source = FileIconCache.GetLarge(entry);
             }
@@ -54,7 +64,10 @@ public static class ThumbnailLoader
                 // 缓存值不允许 null：未命中时现算，算不出不缓存（下次导航可重试）
                 if (!Cache.TryGetValue(key, out source))
                 {
-                    source = DecodeThumbnail(entry) ?? FileIconCache.GetLarge(entry);
+                    source = (isShellThumbnail
+                            ? ShellThumbnail.TryGetThumbnail(entry.FullPath, ThumbnailPixels)
+                            : DecodeThumbnail(entry))
+                        ?? FileIconCache.GetLarge(entry);
                     if (source is not null)
                         Cache[key] = source;
                 }
