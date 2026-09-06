@@ -100,6 +100,9 @@ public partial class PaneViewModel : ObservableObject
     /// <summary>当前目录变化后通知视图同步文件树定位。</summary>
     public event Action<string?>? CurrentPathChanged;
 
+    /// <summary>选中集合变化（含清空），供预览窗格等外部视图跟随。</summary>
+    public event Action? SelectionChanged;
+
     partial void OnCurrentPathChanged(string? value)
     {
         PathText = value == SpecialLocations.RecycleBin ? "回收站" : value ?? "此电脑";
@@ -215,11 +218,12 @@ public partial class PaneViewModel : ObservableObject
         SelectedPaths = items.Select(item => item.FullPath).ToList();
         SelectedEntries = items;
 
-        if (items.Count == 0)
-            return; // 取消选中时保留原状态文本
-
-        var bytes = items.Where(item => !item.IsDirectory).Sum(item => item.SizeBytes ?? 0);
-        StatusText = $"已选中 {items.Count} 个项目（{FsEntry.FormatSize(bytes)}）";
+        if (items.Count > 0)
+        {
+            var bytes = items.Where(item => !item.IsDirectory).Sum(item => item.SizeBytes ?? 0);
+            StatusText = $"已选中 {items.Count} 个项目（{FsEntry.FormatSize(bytes)}）";
+        }
+        SelectionChanged?.Invoke();
     }
 
     public void NavigateTo(string? path)

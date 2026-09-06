@@ -39,6 +39,12 @@ public sealed class SessionState
     /// <summary>详细信息视图隐藏的列（名称列恒显示），随会话记忆。</summary>
     public List<string>? HiddenColumns { get; set; }
 
+    /// <summary>是否显示预览窗格（全局右侧栏）。</summary>
+    public bool ShowPreview { get; set; }
+
+    /// <summary>预览窗格宽度。</summary>
+    public double PreviewWidth { get; set; } = 260;
+
     public List<PaneState> Panes { get; set; } = [];
 }
 

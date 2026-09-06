@@ -123,9 +123,26 @@
                             ToolTip="收藏夹：点击条目跳转激活窗格"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="FavoritesButton_Click"/>
+                    <ToggleButton x:Name="PreviewToggle" Content="&#xE723;" Width="30" Height="24"
+                                  Margin="12,0,0,0" Padding="0" FontSize="14"
+                                  FontFamily="Segoe MDL2 Assets"
+                                  ToolTip="预览窗格 (Alt+P)"
+                                  shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                                  Checked="PreviewToggle_Changed" Unchecked="PreviewToggle_Changed"/>
                 </StackPanel>
             </DockPanel>
         </Border>
+        <!-- 全局预览栏：跟随最近聚焦窗格的选中项（分隔条在其左侧，可拖宽） -->
+        <Border x:Name="PreviewBorder" DockPanel.Dock="Right" Width="260" MinWidth="180" MaxWidth="480"
+                Background="{StaticResource W11.WindowBackground}"
+                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1,0,0,0"
+                Visibility="Collapsed">
+            <controls:PreviewPane x:Name="Preview"/>
+        </Border>
+        <GridSplitter x:Name="PreviewSplitter" DockPanel.Dock="Right" Width="6"
+                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Background="#E5E5E5" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
+                      ToolTip="拖拽调整预览栏宽度" Visibility="Collapsed"/>
         <Grid x:Name="PaneGrid"/>
     </DockPanel>
 </Window>

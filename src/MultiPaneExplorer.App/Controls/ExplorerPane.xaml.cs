@@ -81,6 +81,9 @@ public partial class ExplorerPane : UserControl
         set => SetValue(InitialPathProperty, value);
     }
 
+    /// <summary>任意标签页的选中集合变化（预览窗格跟随用）。</summary>
+    public event Action? SelectionChanged;
+
     /// <summary>加载完成后是否自动获得键盘焦点（多窗格时只给一个窗格）。</summary>
     public bool FocusOnLoad
     {
@@ -113,6 +116,7 @@ public partial class ExplorerPane : UserControl
             if (ReferenceEquals(tab, Vm))
                 EntryList.Focus();
         };
+        tab.SelectionChanged += () => SelectionChanged?.Invoke();
         tab.Entries.CollectionChanged += (_, e) =>
         {
             if (ReferenceEquals(tab, Vm) && tab.ViewMode != "Details" && e.NewItems is not null)

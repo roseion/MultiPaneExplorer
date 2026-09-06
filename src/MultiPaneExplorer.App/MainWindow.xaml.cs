@@ -47,9 +47,14 @@ public partial class MainWindow : Window
         {
             var focused = VisiblePanes().FirstOrDefault(pane => pane.IsKeyboardFocusWithin);
             if (focused is not null)
+            {
                 _lastFocusedPane = focused;
+                UpdatePreview();
+            }
         };
         UndoHub.Service.Changed += RefreshUndoButtons;
+        foreach (var pane in _panes)
+            pane.SelectionChanged += UpdatePreview; // 预览跟随任意窗格的选中变化
         Closing += (_, _) => SaveSession();
     }
 
@@ -110,6 +115,11 @@ public partial class MainWindow : Window
         ApplyZoom();
 
         _lastFocusedPane = _panes[0];
+
+        // 预览栏：先恢复宽度，再按记忆的开关状态显示（_lastFocusedPane 已就位，可立即填充内容）
+        if (session.PreviewWidth >= PreviewBorder.MinWidth)
+            PreviewBorder.Width = session.PreviewWidth;
+        PreviewToggle.IsChecked = session.ShowPreview;
     }
 
     private void SaveSession()
@@ -123,6 +133,10 @@ public partial class MainWindow : Window
                 UiScale = _uiScale,
                 ColumnWidths = new Dictionary<string, double>(Models.ColumnLayoutStore.Widths),
                 HiddenColumns = [.. Models.ColumnLayoutStore.Hidden],
+                ShowPreview = PreviewToggle.IsChecked == true,
+                PreviewWidth = double.IsNaN(PreviewBorder.Width) || PreviewBorder.Width <= 0
+                    ? 260
+                    : PreviewBorder.Width,
                 Panes = _panes.Select(pane => pane.CaptureState()).ToList(),
             });
         }
@@ -267,6 +281,14 @@ public partial class MainWindow : Window
             }
         }
 
+        // Alt+P：预览窗格开关
+        if (Keyboard.Modifiers == ModifierKeys.Alt && e.Key is Key.P)
+        {
+            PreviewToggle.IsChecked = PreviewToggle.IsChecked != true;
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key is not Key.F6)
             return;
 
@@ -287,6 +309,29 @@ public partial class MainWindow : Window
         var next = visible[(currentIndex + 1) % visible.Count];
         next.FocusList();
         e.Handled = true;
+    }
+
+    // ---- 预览窗格：跟随最近聚焦窗格的选中项；取消选中保留上次内容 ----
+
+    private void PreviewToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (PreviewBorder is null || Preview is null)
+            return;
+        var show = PreviewToggle.IsChecked == true;
+        PreviewBorder.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        PreviewSplitter.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (show)
+            UpdatePreview();
+    }
+
+    private void UpdatePreview()
+    {
+        if (PreviewToggle.IsChecked != true)
+            return;
+        var pane = _lastFocusedPane ?? _panes[0];
+        if (pane.Vm.SelectedEntries.LastOrDefault() is not { } entry)
+            return; // 无选中：保留上次预览内容（与资源管理器一致）
+        Preview.Show(entry);
     }
 
     // ---- 界面整体缩放：对根面板做 LayoutTransform，文字/图标/边距等比放大，随会话记忆 ----
