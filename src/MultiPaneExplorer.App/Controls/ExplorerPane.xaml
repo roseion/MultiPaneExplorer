@@ -188,7 +188,8 @@
             <TreeView x:Name="DirTree" Grid.Column="0"
                       ItemsSource="{Binding TreeRoots}"
                       Visibility="{Binding ShowTree, Converter={StaticResource BoolToVis}}"
-                      SelectedItemChanged="DirTree_SelectedItemChanged">
+                      SelectedItemChanged="DirTree_SelectedItemChanged"
+                      ContextMenuOpening="DirTree_ContextMenuOpening">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem">
                         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>

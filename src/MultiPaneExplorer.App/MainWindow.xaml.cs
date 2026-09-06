@@ -431,17 +431,27 @@ public partial class MainWindow : Window
             pane.ForEachTab(vm => vm.ShowHiddenFiles = show);
     }
 
-    /// <summary>收藏夹菜单：条目跳转到最近聚焦的窗格；末项把该窗格当前目录加入收藏。</summary>
+    /// <summary>收藏夹菜单：条目跳转到最近聚焦的窗格（带 ✕ 移除）、"常用"分组（自动计数 Top5）、加入收藏。</summary>
     private void FavoritesButton_Click(object sender, RoutedEventArgs e)
     {
         var target = _lastFocusedPane ?? _panes[0];
         var menu = new ContextMenu();
 
-        foreach (var folder in FavoritesStore.Load())
+        var favorites = FavoritesStore.Load();
+        foreach (var folder in favorites)
+            menu.Items.Add(BuildFavoriteMenuItem(target, folder, removable: true));
+
+        var frequent = FileOps.Core.FrequentStore.Top(5)
+            .Where(folder => Directory.Exists(folder)
+                && !favorites.Contains(folder, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+        if (frequent.Count > 0)
         {
-            var item = new MenuItem { Header = folder };
-            item.Click += (_, _) => target.Vm.NavigateTo(folder);
-            menu.Items.Add(item);
+            if (menu.Items.Count > 0)
+                menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem { Header = "常用", IsEnabled = false });
+            foreach (var folder in frequent)
+                menu.Items.Add(BuildFavoriteMenuItem(target, folder, removable: false));
         }
 
         if (menu.Items.Count > 0)
@@ -453,11 +463,11 @@ public partial class MainWindow : Window
             var path = target.Vm.CurrentPath;
             if (path is null)
                 return;
-            var favorites = FavoritesStore.Load();
-            if (!favorites.Contains(path, StringComparer.OrdinalIgnoreCase))
+            var current = FavoritesStore.Load();
+            if (!current.Contains(path, StringComparer.OrdinalIgnoreCase))
             {
-                favorites.Add(path);
-                FavoritesStore.Save(favorites);
+                current.Add(path);
+                FavoritesStore.Save(current);
             }
         };
         menu.Items.Add(addCurrent);
@@ -467,5 +477,46 @@ public partial class MainWindow : Window
         // 在 Click 处理器里同步打开会被随后的鼠标事件立即关闭，异步打开规避此问题
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
             new Action(() => menu.IsOpen = true));
+    }
+
+    /// <summary>收藏菜单条目：名称跳转，可移除条目右缘带 ✕ 按钮。</summary>
+    private static MenuItem BuildFavoriteMenuItem(ExplorerPane target, string folder, bool removable)
+    {
+        var item = new MenuItem();
+        var panel = new Grid { Width = 230 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = folder,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        if (removable)
+        {
+            var remove = new Button
+            {
+                Content = "✕",
+                Width = 18,
+                Height = 18,
+                Padding = new Thickness(0),
+                FontSize = 10,
+                BorderThickness = new Thickness(0),
+                Background = Brushes.Transparent,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                ToolTip = "从收藏中移除",
+            };
+            remove.Click += (_, removeEvent) =>
+            {
+                removeEvent.Handled = true; // 不触发条目跳转
+                var current = FavoritesStore.Load();
+                current.RemoveAll(favorite => string.Equals(favorite, folder, StringComparison.OrdinalIgnoreCase));
+                FavoritesStore.Save(current);
+                item.IsEnabled = false;
+                item.Header = folder + "（已移除）";
+            };
+            panel.Children.Add(remove);
+        }
+        item.Header = panel;
+        item.Click += (_, _) => target.Vm.NavigateTo(folder);
+        return item;
     }
 }

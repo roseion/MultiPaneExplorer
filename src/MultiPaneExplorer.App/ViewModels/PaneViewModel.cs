@@ -239,6 +239,8 @@ public partial class PaneViewModel : ObservableObject
         BackCommand.NotifyCanExecuteChanged();
         ForwardCommand.NotifyCanExecuteChanged();
         CurrentPath = path;
+        if (path is not null && path != SpecialLocations.RecycleBin)
+            FrequentStore.Record(path); // 常用目录计数（收藏菜单"常用"分组）
         LoadEntries();
     }
 

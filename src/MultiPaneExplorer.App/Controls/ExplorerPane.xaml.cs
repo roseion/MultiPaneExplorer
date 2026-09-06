@@ -94,8 +94,7 @@ public partial class ExplorerPane : UserControl
     private void NewTabButton_Click(object sender, RoutedEventArgs e) => AddTab();
 
     private PaneViewModel CreateTab()
-    {
-        var tab = new PaneViewModel();
+    {        var tab = new PaneViewModel();
         tab.CurrentPathChanged += path =>
         {
             if (ReferenceEquals(tab, Vm))
@@ -125,10 +124,10 @@ public partial class ExplorerPane : UserControl
         return tab;
     }
 
-    private void AddTab()
+    private void AddTab(string? initialPath = null)
     {
         var tab = CreateTab();
-        tab.Initialize(Vm.CurrentPath);
+        tab.Initialize(initialPath ?? Vm.CurrentPath);
         _tabs.Insert(_activeTabIndex + 1, tab);
         SwitchTab(_activeTabIndex + 1);
     }
@@ -327,6 +326,48 @@ public partial class ExplorerPane : UserControl
     {
         if (sender is TreeViewItem { DataContext: FsTreeNode node })
             node.LoadChildren();
+    }
+
+    /// <summary>文件树节点右键：固定到收藏/取消收藏、在新标签页打开。</summary>
+    private void DirTree_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (e.OriginalSource is not DependencyObject source
+            || ItemsControl.ContainerFromElement(DirTree, source) is not TreeViewItem
+            {
+                DataContext: FsTreeNode { IsDummy: false } node,
+            }
+            || node.FullPath == SpecialLocations.RecycleBin
+            || !Directory.Exists(node.FullPath))
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var favorites = FileOps.Core.FavoritesStore.Load();
+        var pinned = favorites.Contains(node.FullPath, StringComparer.OrdinalIgnoreCase);
+
+        var menu = new ContextMenu();
+        var pinItem = new MenuItem { Header = pinned ? "从收藏中移除" : "固定到收藏" };
+        pinItem.Click += (_, _) =>
+        {
+            var current = FileOps.Core.FavoritesStore.Load();
+            if (pinned)
+                current.RemoveAll(item => string.Equals(item, node.FullPath, StringComparison.OrdinalIgnoreCase));
+            else if (!current.Contains(node.FullPath, StringComparer.OrdinalIgnoreCase))
+                current.Add(node.FullPath);
+            FileOps.Core.FavoritesStore.Save(current);
+        };
+        menu.Items.Add(pinItem);
+
+        var newTabItem = new MenuItem { Header = "在新标签页打开" };
+        newTabItem.Click += (_, _) => AddTab(node.FullPath);
+        menu.Items.Add(newTabItem);
+
+        menu.PlacementTarget = DirTree;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+        // 右键事件处理过程中同步打开会被随后的鼠标事件立即关闭（同面包屑下拉坑），异步打开规避
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+            new Action(() => menu.IsOpen = true));
     }
 
     private void AddressBox_KeyDown(object sender, KeyEventArgs e)
