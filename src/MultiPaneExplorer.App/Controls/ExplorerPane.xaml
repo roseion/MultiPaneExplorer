@@ -332,7 +332,8 @@
                                   InputGestureText="Ctrl+Shift+C"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.CopyPathCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                        <Separator/>
+                        <!-- 分割线与相邻菜单组同视图：组整组隐藏时分割线一起隐藏，避免双线/悬空线 -->
+                        <Separator Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
                         <MenuItem Header="还原"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.RestoreSelectedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -346,7 +347,7 @@
                         <MenuItem Header="清空回收站"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.EmptyRecycleBinCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                        <Separator/>
+                        <Separator Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
                         <MenuItem Header="新建" Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}">
                             <MenuItem Header="文件夹"
                                       Command="{Binding PlacementTarget.DataContext.NewFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -365,7 +366,7 @@
                                   InputGestureText="Shift+Del"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.DeletePermanentlyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                        <Separator/>
+                        <Separator Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
                         <MenuItem Header="压缩为 ZIP"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"
                                   Command="{Binding PlacementTarget.DataContext.ZipSelectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -384,12 +385,12 @@
                                   ToolTip="跳转到该文件所在的目录（递归搜索结果用）"
                                   Visibility="{Binding DataContext.IsSearchResultsView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"
                                   Click="OpenContainingFolder_Click"/>
-                        <Separator/>
+                        <Separator Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
                         <MenuItem Header="打开方式…" Click="OpenWith_Click"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
                         <MenuItem Header="属性" Click="Properties_Click"
                                   Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
-                        <Separator/>
+                        <Separator Visibility="{Binding DataContext.IsRecycleBinView, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVis}}"/>
                         <MenuItem Header="刷新"
                                   InputGestureText="F5"
                                   Command="{Binding PlacementTarget.DataContext.RefreshCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
