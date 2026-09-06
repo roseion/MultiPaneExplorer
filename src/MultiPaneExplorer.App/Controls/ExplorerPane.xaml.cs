@@ -98,6 +98,13 @@ public partial class ExplorerPane : UserControl
 
     private void NewTabButton_Click(object sender, RoutedEventArgs e) => AddTab();
 
+    /// <summary>双击标签条空白处新建标签页（标签钮自身会处理按下事件，只有空白处到达这里）。</summary>
+    private void TabStrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+            AddTab();
+    }
+
     private PaneViewModel CreateTab()
     {        var tab = new PaneViewModel();
         tab.CurrentPathChanged += path =>
@@ -251,6 +258,14 @@ public partial class ExplorerPane : UserControl
                 Style = System.Windows.Application.Current?.TryFindResource("W11.TabButton") as Style,
             };
             tabButton.Click += (_, _) => SwitchTab(index);
+            tabButton.MouseUp += (_, mouse) =>
+            {
+                if (mouse.ChangedButton == MouseButton.Middle)
+                {
+                    CloseTab(index); // 中键关闭（与浏览器/资源管理器一致）
+                    mouse.Handled = true;
+                }
+            };
             TabStrip.Children.Add(tabButton);
         }
     }
@@ -803,7 +818,9 @@ public partial class ExplorerPane : UserControl
         FileOps.Core.ShellDialogs.ShowOpenWithDialog(Vm.SelectedPaths[0]);
     }
 
-    private void Properties_Click(object sender, RoutedEventArgs e)
+    private void Properties_Click(object sender, RoutedEventArgs e) => ShowProperties();
+
+    private void ShowProperties()
     {
         if (Vm.SelectedPaths.Count == 0)
             return;
@@ -1037,6 +1054,36 @@ public partial class ExplorerPane : UserControl
             return;
         }
 
+        // Ctrl+Shift+N：新建文件夹
+        if (e.Key is Key.N && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+        {
+            Vm.NewFolderCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        // Alt 系：Alt+Enter 属性、Alt+←/→ 后退/前进
+        if (Keyboard.Modifiers == ModifierKeys.Alt)
+        {
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    ShowProperties();
+                    e.Handled = true;
+                    return;
+                case Key.Left:
+                    if (Vm.BackCommand.CanExecute(null))
+                        Vm.BackCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                case Key.Right:
+                    if (Vm.ForwardCommand.CanExecute(null))
+                        Vm.ForwardCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+            }
+        }
+
         if (Keyboard.Modifiers != ModifierKeys.Control)
             return;
 
@@ -1052,6 +1099,10 @@ public partial class ExplorerPane : UserControl
                 break;
             case Key.V:
                 Vm.PasteCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.D:
+                Vm.DeleteCommand.Execute(null); // Ctrl+D：删除到回收站
                 e.Handled = true;
                 break;
             case Key.T:

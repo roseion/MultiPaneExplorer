@@ -219,7 +219,8 @@
                         ToolTip="新建标签页 (Ctrl+T)"
                         Click="NewTabButton_Click"/>
                 <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                    <StackPanel x:Name="TabStrip" Orientation="Horizontal"/>
+                    <StackPanel x:Name="TabStrip" Orientation="Horizontal" Background="Transparent"
+                                MouseLeftButtonDown="TabStrip_MouseLeftButtonDown"/>
                 </ScrollViewer>
             </DockPanel>
         </Border>
