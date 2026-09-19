@@ -4,7 +4,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:controls="clr-namespace:MultiPaneExplorer.App.Controls"
         Title="多栏资源管理器" Width="1440" Height="820"
-        Background="{StaticResource W11.WindowBackground}"
+        Background="{DynamicResource W11.WindowBackground}"
         WindowStartupLocation="CenterScreen"
         PreviewKeyDown="Window_PreviewKeyDown"
         StateChanged="Window_StateChanged">
@@ -23,7 +23,7 @@
             <Setter Property="FontSize" Value="10"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -32,10 +32,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.HoverBackground}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.PressedBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.PressedBackground}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -44,13 +44,13 @@
         </Style>
         <!-- 贴靠布局弹窗里的分区格（悬停高亮） -->
         <Style x:Key="SnapZoneStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource W11.SubtleBackground}"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource W11.AccentTint}"/>
-                    <Setter Property="BorderBrush" Value="{StaticResource W11.Accent}"/>
+                    <Setter Property="Background" Value="{DynamicResource W11.AccentTint}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource W11.Accent}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -63,11 +63,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DangerBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.DangerBrush}"/>
                                 <Setter TargetName="Content" Property="TextElement.Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.DangerPressed}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.DangerPressed}"/>
                                 <Setter TargetName="Content" Property="TextElement.Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -79,28 +79,28 @@
     <DockPanel x:Name="RootPanel">
         <!-- 合并后的标题栏（40px Mica）：左应用名，中部拖拽区，右区功能图标钮+自绘窗口按钮；
              布局切换/显示隐藏文件/预览收进"查看"菜单，保持标题栏极简（Explorer 式） -->
-        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="40" Background="{StaticResource W11.LayerBackground}"
+        <Border DockPanel.Dock="Top" x:Name="CaptionBar" Height="40" Background="{DynamicResource W11.LayerBackground}"
                 MouseRightButtonUp="CaptionBar_MouseRightButtonUp">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button x:Name="UndoButton" Content="&#xE7A7;" Width="32" Height="32" Margin="0,0,2,0"
-                            Style="{StaticResource W11.IconButton}" FontSize="14"
+                            Style="{DynamicResource W11.IconButton}" FontSize="14"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" IsEnabled="False"
                             ToolTip="撤销 (Ctrl+Z)"
                             Click="UndoButton_Click"/>
                     <Button x:Name="RedoButton" Content="&#xE7A6;" Width="32" Height="32" Margin="0,0,8,0"
-                            Style="{StaticResource W11.IconButton}" FontSize="14"
+                            Style="{DynamicResource W11.IconButton}" FontSize="14"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                             ToolTip="重做 (Ctrl+Y)"
                             Click="RedoButton_Click"/>
                     <Button x:Name="FavoritesButton" Content="&#xE735;" Width="32" Height="32" Margin="0,0,2,0"
-                            Style="{StaticResource W11.IconButton}" FontSize="14"
+                            Style="{DynamicResource W11.IconButton}" FontSize="14"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                             ToolTip="收藏夹：点击条目跳转激活窗格"
                             Click="FavoritesButton_Click"/>
                     <Button x:Name="ViewMenuButton" Width="48" Height="32" Margin="0,0,8,0"
-                            Style="{StaticResource W11.IconButton}"
+                            Style="{DynamicResource W11.IconButton}"
                             ToolTip="布局、显示隐藏文件与预览窗格"
                             Click="ViewMenuButton_Click">
                         <StackPanel Orientation="Horizontal">
@@ -120,14 +120,14 @@
                 </StackPanel>
                 <TextBlock Text="多栏资源管理器" VerticalAlignment="Center" Margin="12,0,14,0"
                            FontSize="12" FontWeight="SemiBold"
-                           Foreground="{StaticResource W11.TextSecondary}"/>
+                           Foreground="{DynamicResource W11.TextSecondary}"/>
             </DockPanel>
         </Border>
         <!-- Win11 贴靠布局弹窗：最大化钮悬停 400ms 出现，左右两分 + 四宫格 -->
         <Popup x:Name="SnapPopup" PlacementTarget="{Binding ElementName=MaximizeButton}" Placement="Bottom"
                AllowsTransparency="True" StaysOpen="False" Focusable="False" PopupAnimation="Fade"
                MouseLeave="SnapPopup_MouseLeave">
-            <Border Background="{StaticResource W11.MenuBackground}" BorderBrush="{StaticResource W11.ControlBorder}"
+            <Border Background="{DynamicResource W11.MenuBackground}" BorderBrush="{DynamicResource W11.ControlBorder}"
                     BorderThickness="1" CornerRadius="8" Padding="12" Margin="6">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.18"/>
@@ -164,14 +164,14 @@
         </Popup>
         <!-- 全局预览栏（白底）：跟随最近聚焦窗格的选中项（分隔条在其左侧，可拖宽） -->
         <Border x:Name="PreviewBorder" DockPanel.Dock="Right" Width="260" MinWidth="180" MaxWidth="480"
-                Background="{StaticResource W11.CardBackground}"
-                BorderBrush="{StaticResource W11.Divider}" BorderThickness="1,0,0,0"
+                Background="{DynamicResource W11.CardBackground}"
+                BorderBrush="{DynamicResource W11.Divider}" BorderThickness="1,0,0,0"
                 Visibility="Collapsed">
             <controls:PreviewPane x:Name="Preview"/>
         </Border>
         <GridSplitter x:Name="PreviewSplitter" DockPanel.Dock="Right" Width="6"
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                      Background="{StaticResource W11.Splitter}" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
+                      Background="{DynamicResource W11.Splitter}" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
                       ToolTip="拖拽调整预览栏宽度" Visibility="Collapsed"/>
         <Grid x:Name="PaneGrid"/>
     </DockPanel>

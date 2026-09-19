@@ -62,7 +62,7 @@
         <!-- 标签页卡片：激活 = 白底与主体融为一体；未激活 = 浅灰胶囊（白底上可辨） -->
         <Style x:Key="W11.TabButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Padding" Value="12,5"/>
             <Setter Property="Template">
@@ -76,10 +76,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.SubtleBackground}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.HoverBackground}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -94,12 +94,12 @@
                     <StackPanel Margin="12,0,0,0" VerticalAlignment="Center" Width="236">
                         <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" ToolTip="{Binding FullPath}"/>
-                        <Border Height="6" CornerRadius="3" Background="{StaticResource W11.ControlBorder}" Margin="0,6,0,4">
-                            <Border Background="{StaticResource W11.Accent}" CornerRadius="3"
+                        <Border Height="6" CornerRadius="3" Background="{DynamicResource W11.ControlBorder}" Margin="0,6,0,4">
+                            <Border Background="{DynamicResource W11.Accent}" CornerRadius="3"
                                     HorizontalAlignment="Left" Width="{Binding DriveBarWidth}"/>
                         </Border>
                         <TextBlock Text="{Binding DriveInfoText}" FontSize="12"
-                                   Foreground="{StaticResource W11.TextSecondary}"/>
+                                   Foreground="{DynamicResource W11.TextSecondary}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -119,7 +119,7 @@
                                     Margin="0,2" Padding="6,4">
                                 <TextBlock Text="{TemplateBinding Content}" VerticalAlignment="Center"
                                            FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{StaticResource W11.TextSecondary}"/>
+                                           Foreground="{DynamicResource W11.TextSecondary}"/>
                             </Border>
                             <Thumb x:Name="Resizer" Width="6" HorizontalAlignment="Right" Cursor="SizeWE"
                                    DragStarted="ColumnResizer_DragStarted"
@@ -134,7 +134,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.SubtleBackground}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -144,7 +144,7 @@
     </UserControl.Resources>
     <DockPanel>
         <!-- 命令行：Finder 式呼吸圈（上 8 左右 20 下 6），与标签条之间靠留白分层 -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="20,8,20,6">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource W11.LayerBackground}" Padding="20,8,20,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -156,13 +156,13 @@
                                   Width="32" Height="32" Margin="0,0,4,0" Padding="0" FontSize="16"
                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE700;"/>
                     <Button Command="{Binding BackCommand}" ToolTip="后退" Width="32" Height="32"
-                            Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Style="{DynamicResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72B;"/>
                     <Button Command="{Binding ForwardCommand}" ToolTip="前进" Width="32" Height="32"
-                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Margin="4,0,0,0" Style="{DynamicResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72A;"/>
                     <Button Command="{Binding UpCommand}" ToolTip="向上" Width="32" Height="32"
-                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Margin="4,0,0,0" Style="{DynamicResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE74A;"/>
                 </StackPanel>
                 <Grid Grid.Column="1" Margin="12,0,8,0">
@@ -171,8 +171,8 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <Grid VerticalAlignment="Center" MinHeight="30">
-                        <Border x:Name="CrumbBar" Background="{StaticResource W11.CardBackground}" CornerRadius="6" Padding="6,0"
-                                BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
+                        <Border x:Name="CrumbBar" Background="{DynamicResource W11.CardBackground}" CornerRadius="6" Padding="6,0"
+                                BorderBrush="{DynamicResource W11.ControlBorder}" BorderThickness="1"
                                 MouseLeftButtonDown="CrumbBar_MouseLeftButtonDown"
                                 ToolTip="点击空白处输入路径；点击各段跳转，▼ 展开子目录">
                             <ScrollViewer x:Name="CrumbScroll" HorizontalScrollBarVisibility="Hidden"
@@ -198,11 +198,11 @@
                                      KeyDown="FilterBox_KeyDown"
                                      Padding="26,4,6,4"/>
                             <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13"
-                                       Foreground="{StaticResource W11.TextTertiary}"
+                                       Foreground="{DynamicResource W11.TextTertiary}"
                                        HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0"
                                        IsHitTestVisible="False"/>
                             <TextBlock Text="搜索" FontSize="12"
-                                       Foreground="{StaticResource W11.TextTertiary}"
+                                       Foreground="{DynamicResource W11.TextTertiary}"
                                        HorizontalAlignment="Left" VerticalAlignment="Center" Margin="26,0,0,0"
                                        IsHitTestVisible="False">
                                 <TextBlock.Style>
@@ -232,25 +232,25 @@
                         <ComboBoxItem Content="列表" Tag="List"/>
                     </ComboBox>
                     <Button Command="{Binding RefreshCommand}" ToolTip="刷新 (F5)" Width="32" Height="32"
-                            Margin="16,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Margin="16,0,0,0" Style="{DynamicResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72C;"/>
                     <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="32" Height="32"
-                            Margin="16,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Margin="16,0,0,0" Style="{DynamicResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE8F4;"/>
                     <Button Command="{Binding OpenRecycleBinCommand}" ToolTip="打开回收站" Width="32" Height="32"
-                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Margin="4,0,0,0" Style="{DynamicResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE74D;"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- 标签条：白底主体延伸上来，与命令行之间 14px 留白分层（Finder 分层节奏） -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource W11.CardBackground}" Padding="20,0,20,0"
+        <Border DockPanel.Dock="Top" Background="{DynamicResource W11.CardBackground}" Padding="20,0,20,0"
                 Margin="0,14,0,0">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Width="26" Height="24" Content="&#xE710;" FontSize="10"
                         FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                        Style="{StaticResource W11.IconButton}"
+                        Style="{DynamicResource W11.IconButton}"
                         ToolTip="新建标签页 (Ctrl+T)"
                         Click="NewTabButton_Click"/>
                 <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
@@ -261,14 +261,14 @@
         </Border>
 
         <!-- 状态栏：同暖灰层，上缘极浅 hairline -->
-        <Border DockPanel.Dock="Bottom" Background="{StaticResource W11.LayerBackground}" Padding="20,4"
-                BorderBrush="{StaticResource W11.Divider}" BorderThickness="0,1,0,0">
-            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource W11.TextSecondary}"
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource W11.LayerBackground}" Padding="20,4"
+                BorderBrush="{DynamicResource W11.Divider}" BorderThickness="0,1,0,0">
+            <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource W11.TextSecondary}"
                        TextTrimming="CharacterEllipsis"/>
         </Border>
 
         <!-- 主体：白色列表区 + 毛玻璃浅灰侧栏（材质区分，Finder 式）；四周 20px 呼吸圈 -->
-        <Grid Background="{StaticResource W11.LayerBackground}" Margin="20,14,20,8">
+        <Grid Background="{DynamicResource W11.LayerBackground}" Margin="20,14,20,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="TreeColumn" Width="240" MinWidth="160" MaxWidth="520"/>
                 <ColumnDefinition Width="Auto"/>
@@ -281,7 +281,7 @@
                    StaysOpen="False"
                    AllowsTransparency="True"
                    PopupAnimation="Fade">
-                <Border Background="{StaticResource W11.MenuBackground}" BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
+                <Border Background="{DynamicResource W11.MenuBackground}" BorderBrush="{DynamicResource W11.ControlBorder}" BorderThickness="1"
                         MinWidth="280" MaxHeight="220" SnapsToDevicePixels="True" CornerRadius="8">
                     <ListBox x:Name="SuggestList" BorderThickness="0"
                              DisplayMemberPath="Name"
@@ -292,8 +292,8 @@
             </Popup>
 
             <!-- 侧栏：与文件列表同色（白色圆角卡，用户偏好统一） -->
-            <Border Grid.Column="0" Background="{StaticResource W11.CardBackground}" CornerRadius="8"
-                    BorderBrush="{StaticResource W11.CardBorder}" BorderThickness="1"
+            <Border Grid.Column="0" Background="{DynamicResource W11.CardBackground}" CornerRadius="8"
+                    BorderBrush="{DynamicResource W11.CardBorder}" BorderThickness="1"
                     Margin="0,0,0,0" Padding="8,6"
                     Visibility="{Binding ShowTree, Converter={StaticResource BoolToVis}}">
                 <TreeView x:Name="DirTree"
@@ -330,7 +330,7 @@
 
             <!-- 内容区：白色圆角卡浮在暖灰层上（Finder 内容卡），拖拽提示临时改描边色 -->
             <Border x:Name="DropZone" Grid.Column="2" BorderThickness="1" BorderBrush="Transparent"
-                    Background="{StaticResource W11.CardBackground}" CornerRadius="8" Padding="12,6,12,6">
+                    Background="{DynamicResource W11.CardBackground}" CornerRadius="8" Padding="12,6,12,6">
             <ListView x:Name="EntryList"
                       ItemsSource="{Binding Entries}"
                       SelectionMode="Extended"
@@ -433,7 +433,7 @@
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
                         <Setter Property="Padding" Value="4,3"/>
                         <Setter Property="MinHeight" Value="32"/>
                         <Setter Property="Template">
@@ -447,10 +447,10 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.RowHover}"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.SelectionBackground}"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -471,10 +471,10 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.RowHover}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.SelectionBackground}"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -493,10 +493,10 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.RowHover}"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.RowHover}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SelectionBackground}"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.SelectionBackground}"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>

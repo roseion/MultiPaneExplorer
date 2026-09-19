@@ -6,6 +6,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- token 字典由 ThemeManager 在启动时按会话设置替换（默认浅色） -->
+                <ResourceDictionary Source="Themes/Tokens.Light.xaml"/>
                 <ResourceDictionary Source="Themes/Win11Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

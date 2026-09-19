@@ -90,6 +90,31 @@ public sealed class SessionStoreTests : IDisposable
         Assert.Equal("LargeIcons", restored.Panes[0].Tabs[0].ViewMode);
     }
 
+    /// <summary>主题三态（浅/深/跟随系统）随会话持久化。</summary>
+    [Fact]
+    public void Save_TryLoad_PreservesTheme()
+    {
+        var original = new SessionState { Theme = "Dark" };
+
+        SessionStore.Save(original, _filePath);
+        var restored = SessionStore.TryLoad(_filePath);
+
+        Assert.NotNull(restored);
+        Assert.Equal("Dark", restored.Theme);
+    }
+
+    /// <summary>缺省主题为跟随系统；旧会话文件无该字段时反序列化得到默认值。</summary>
+    [Fact]
+    public void TryLoad_MissingThemeField_DefaultsToSystem()
+    {
+        File.WriteAllText(_filePath, "{ \"Layout\": \"Two\" }");
+
+        var restored = SessionStore.TryLoad(_filePath);
+
+        Assert.NotNull(restored);
+        Assert.Equal("System", restored.Theme);
+    }
+
     /// <summary>非法转义等损坏的会话文件应按"无会话"处理，而不是让应用崩溃。</summary>
     [Fact]
     public void TryLoad_CorruptedJson_ReturnsNull()

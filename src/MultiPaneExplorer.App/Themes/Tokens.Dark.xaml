@@ -1,0 +1,59 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+    ============================================================
+    主题 Token · 深色（macOS/Finder 暗色风）
+    暖黑层 + 近黑内容卡 + 蓝选中；键名与 Light 完全一致
+    ============================================================
+    -->
+
+    <!-- ============ 强调色（macOS 暗色系统蓝，亮度提升保证对比） ============ -->
+    <Color x:Key="AccentColor">#FF409CFF</Color>
+    <SolidColorBrush x:Key="W11.Accent" Color="#409CFF"/>
+    <SolidColorBrush x:Key="W11.AccentHover" Color="#64ADFF"/>
+    <SolidColorBrush x:Key="W11.AccentPressed" Color="#2F86E8"/>
+    <SolidColorBrush x:Key="W11.AccentTint" Color="#1C3A5E"/>
+
+    <!-- ============ 表面（暖黑三层） ============ -->
+    <SolidColorBrush x:Key="W11.WindowBackground" Color="#1E1E20"/>
+    <SolidColorBrush x:Key="W11.LayerBackground" Color="#1E1E20"/>
+    <SolidColorBrush x:Key="W11.CardBackground" Color="#232325"/>
+    <SolidColorBrush x:Key="W11.SubtleBackground" Color="#2A2A2C"/>
+    <SolidColorBrush x:Key="W11.HoverBackground" Color="#333335"/>
+    <SolidColorBrush x:Key="W11.PressedBackground" Color="#3C3C3E"/>
+    <SolidColorBrush x:Key="W11.DisabledBackground" Color="#262628"/>
+
+    <!-- ============ 选中/悬停（暗色蓝选中） ============ -->
+    <SolidColorBrush x:Key="W11.SelectionBackground" Color="#2F4B6E"/>
+    <SolidColorBrush x:Key="W11.RowHover" Color="#2C2C2E"/>
+
+    <!-- ============ 线与分隔（暗色极浅描边） ============ -->
+    <SolidColorBrush x:Key="W11.CardBorder" Color="#3A3A3C"/>
+    <SolidColorBrush x:Key="W11.ControlBorder" Color="#454547"/>
+    <SolidColorBrush x:Key="W11.ControlBorderHover" Color="#55555A"/>
+    <SolidColorBrush x:Key="W11.ControlBorderPressed" Color="#66666B"/>
+    <SolidColorBrush x:Key="W11.Divider" Color="#333335"/>
+    <SolidColorBrush x:Key="W11.Splitter" Color="#333335"/>
+
+    <!-- ============ 文字（亮字层级） ============ -->
+    <SolidColorBrush x:Key="W11.TextPrimary" Color="#ECECEE"/>
+    <SolidColorBrush x:Key="W11.TextSecondary" Color="#A8A8AE"/>
+    <SolidColorBrush x:Key="W11.TextTertiary" Color="#7C7C82"/>
+    <SolidColorBrush x:Key="W11.TextDisabled" Color="#5A5A60"/>
+
+    <!-- ============ 功能色 / 浅色元素（暗色下反转） ============ -->
+    <SolidColorBrush x:Key="W11.DangerBrush" Color="#FF6961"/>
+    <SolidColorBrush x:Key="W11.DangerPressed" Color="#E8574F"/>
+    <SolidColorBrush x:Key="W11.SuccessBrush" Color="#32D74B"/>
+    <SolidColorBrush x:Key="W11.WarningBrush" Color="#FFB340"/>
+    <SolidColorBrush x:Key="W11.MenuBackground" Color="#2C2C2E"/>
+    <SolidColorBrush x:Key="W11.ScrollBarIdle" Color="#4A4A4E"/>
+    <SolidColorBrush x:Key="W11.ScrollBarHover" Color="#6A6A6E"/>
+    <SolidColorBrush x:Key="W11.ScrollBarDrag" Color="#8A8A8E"/>
+    <SolidColorBrush x:Key="W11.TooltipBackground" Color="#3A3A3C"/>
+
+    <!-- 列表/树选中色（全局系统键覆盖） -->
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#2F4B6E"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#ECECEE"/>
+</ResourceDictionary>

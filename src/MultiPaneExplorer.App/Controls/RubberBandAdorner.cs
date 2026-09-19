@@ -4,21 +4,25 @@ using System.Windows.Media;
 
 namespace MultiPaneExplorer.App.Controls;
 
-/// <summary>列表空白处拖动的橡皮筋选框（半透明主色矩形，WPF 列表原生不支持框选）。</summary>
+/// <summary>列表空白处拖动的橡皮筋选框（半透明强调色矩形，WPF 列表原生不支持框选）。</summary>
 public sealed class RubberBandAdorner : Adorner
 {
-    private static readonly Brush FillBrush = new SolidColorBrush(Color.FromArgb(45, 0x00, 0x67, 0xC0));
-    private static readonly Pen BorderPen = new(new SolidColorBrush(Color.FromRgb(0x00, 0x67, 0xC0)), 1);
+    private readonly Brush _fillBrush;
+    private readonly Pen _borderPen;
 
-    static RubberBandAdorner()
+    public RubberBandAdorner(UIElement adornedElement) : base(adornedElement)
     {
-        FillBrush.Freeze();
-        BorderPen.Freeze();
+        // 跟随主题强调色（资源缺失时退回中蓝，深浅两版都可辨）
+        var accent = System.Windows.Application.Current?.TryFindResource("W11.Accent") as Brush
+            ?? new SolidColorBrush(Color.FromRgb(0x0A, 0x60, 0xFF));
+        var fill = accent.Clone();
+        fill.Opacity = 0.18;
+        _fillBrush = fill;
+        _borderPen = new Pen(accent, 1);
+        _borderPen.Freeze();
     }
 
     private Rect _rect;
-
-    public RubberBandAdorner(UIElement adornedElement) : base(adornedElement) { }
 
     public void Update(Rect rect)
     {
@@ -27,5 +31,5 @@ public sealed class RubberBandAdorner : Adorner
     }
 
     protected override void OnRender(DrawingContext drawingContext) =>
-        drawingContext.DrawRectangle(FillBrush, BorderPen, _rect);
+        drawingContext.DrawRectangle(_fillBrush, _borderPen, _rect);
 }

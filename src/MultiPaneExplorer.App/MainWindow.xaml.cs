@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Shell;
 using FileOps.Core;
 using MultiPaneExplorer.App.Controls;
+using MultiPaneExplorer.App.Models;
 using MultiPaneExplorer.App.ViewModels;
 
 namespace MultiPaneExplorer.App;
@@ -113,6 +114,11 @@ public partial class MainWindow : Window
 
         _lastFocusedPane = _panes[0];
 
+        // 主题：应用会话设置（Light/Dark/System），跟随系统时挂 WM_SETTINGCHANGE 钩子
+        ThemeManager.ApplySelected(string.IsNullOrEmpty(session.Theme)
+            ? Models.ThemeManager.System
+            : session.Theme);
+
         // 全局开关状态字段化（原标题栏控件的值迁入"查看"菜单）
         _showHidden = session.ShowHiddenFiles;
         if (_showHidden)
@@ -141,6 +147,7 @@ public partial class MainWindow : Window
                 PreviewWidth = double.IsNaN(PreviewBorder.Width) || PreviewBorder.Width <= 0
                     ? 260
                     : PreviewBorder.Width,
+                Theme = ThemeManager.SelectedTheme,
                 Panes = _panes.Select(pane => pane.CaptureState()).ToList(),
             });
         }
@@ -400,6 +407,33 @@ public partial class MainWindow : Window
         menu.Items.Add(previewItem);
 
         menu.Items.Add(new Separator());
+
+        // 外观：主题三态（即时切换，随会话记忆）
+        var appearanceItem = new MenuItem { Header = "外观" };
+        foreach (var (value, title) in new[]
+                 {
+                     (Models.ThemeManager.Light, "浅色"),
+                     (Models.ThemeManager.Dark, "深色"),
+                     (Models.ThemeManager.System, "跟随系统"),
+                 })
+        {
+            var themeItem = new MenuItem
+            {
+                Header = title,
+                IsCheckable = true,
+                IsChecked = ThemeManager.SelectedTheme == value,
+            };
+            var target = value;
+            themeItem.Click += (_, _) =>
+            {
+                ThemeManager.ApplySelected(target);
+                SaveSessionTheme();
+            };
+            appearanceItem.Items.Add(themeItem);
+        }
+        menu.Items.Add(appearanceItem);
+
+        menu.Items.Add(new Separator());
         menu.Items.Add(new MenuItem
         {
             Header = $"多栏资源管理器 v{GetVersion()}",
@@ -417,6 +451,31 @@ public partial class MainWindow : Window
     {
         foreach (var pane in _panes)
             pane.ForEachTab(vm => vm.ShowHiddenFiles = _showHidden);
+    }
+
+    /// <summary>主题选择即时写入会话文件（不等退出）。</summary>
+    private void SaveSessionTheme()
+    {
+        try
+        {
+            var session = SessionStore.TryLoad() ?? new SessionState();
+            session.Theme = ThemeManager.SelectedTheme;
+            session.Layout = _layout.ToString();
+            session.ShowHiddenFiles = _showHidden;
+            session.UiScale = _uiScale;
+            session.ColumnWidths = new Dictionary<string, double>(Models.ColumnLayoutStore.Widths);
+            session.HiddenColumns = [.. Models.ColumnLayoutStore.Hidden];
+            session.ShowPreview = _showPreview;
+            session.PreviewWidth = double.IsNaN(PreviewBorder.Width) || PreviewBorder.Width <= 0
+                ? 260
+                : PreviewBorder.Width;
+            session.Panes = _panes.Select(pane => pane.CaptureState()).ToList();
+            SessionStore.Save(session);
+        }
+        catch
+        {
+            // 主题记忆失败不影响切换
+        }
     }
 
     private static string GetVersion()

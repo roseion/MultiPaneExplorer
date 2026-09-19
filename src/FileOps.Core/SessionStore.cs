@@ -45,6 +45,9 @@ public sealed class SessionState
     /// <summary>预览窗格宽度。</summary>
     public double PreviewWidth { get; set; } = 260;
 
+    /// <summary>主题：Light / Dark / System（跟随 Windows）。缺省跟随系统。</summary>
+    public string Theme { get; set; } = "System";
+
     public List<PaneState> Panes { get; set; } = [];
 }
 
