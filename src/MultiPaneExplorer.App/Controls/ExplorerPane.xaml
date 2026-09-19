@@ -58,7 +58,7 @@
         <ItemsPanelTemplate x:Key="DetailsItemsPanel">
             <VirtualizingStackPanel/>
         </ItemsPanelTemplate>
-        <!-- 标签页：圆角顶部的卡片形（激活白底与内容卡同色） -->
+        <!-- 标签页卡片：激活 = 白底与主体融为一体；未激活 = 浅灰胶囊（白底上可辨） -->
         <Style x:Key="W11.TabButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource W11.TextPrimary}"/>
@@ -68,16 +68,17 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="6,6,0,0" Padding="{TemplateBinding Padding}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.PressedBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -107,16 +108,17 @@
         </ItemsPanelTemplate>
         <!-- 列头模板（含拖拽 Thumb） -->
         <!-- Win11 风列头：透明底+悬停浅灰，右缘 Thumb 拖拽调宽 -->
+        <!-- 列头：无边框（悬停才显胶囊底），去表格感 -->
         <Style TargetType="GridViewColumnHeader">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="GridViewColumnHeader">
                         <Grid>
-                            <Border x:Name="Bd" Background="Transparent"
-                                    BorderBrush="{StaticResource W11.Divider}"
-                                    BorderThickness="0,0,1,1" Padding="6,4">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4"
+                                    Margin="0,2" Padding="6,4">
                                 <TextBlock Text="{TemplateBinding Content}" VerticalAlignment="Center"
-                                           FontSize="12" Foreground="{StaticResource W11.TextPrimary}"/>
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource W11.TextSecondary}"/>
                             </Border>
                             <Thumb x:Name="Resizer" Width="6" HorizontalAlignment="Right" Cursor="SizeWE"
                                    Background="Transparent"
@@ -126,7 +128,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.HoverBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource W11.SubtleBackground}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -182,17 +184,41 @@
                                  LostKeyboardFocus="AddressBox_LostKeyboardFocus"/>
                     </Grid>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
-                        <TextBox x:Name="FilterBox" Width="160" VerticalContentAlignment="Center"
-                                 ToolTip="过滤当前列表；勾选右侧则在全部子目录中搜索 (Ctrl+F 聚焦，Esc 清除)"
-                                 Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
-                                 KeyDown="FilterBox_KeyDown"/>
+                        <!-- 搜索框：放大镜图标 + 占位文字（避免"空白破洞"感） -->
+                        <Grid Width="190" MinWidth="150">
+                            <TextBox x:Name="FilterBox" VerticalContentAlignment="Center"
+                                     ToolTip="过滤当前列表；勾选右侧则在全部子目录中搜索 (Ctrl+F 聚焦，Esc 清除)"
+                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
+                                     KeyDown="FilterBox_KeyDown"
+                                     Padding="26,4,6,4"/>
+                            <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13"
+                                       Foreground="{StaticResource W11.TextTertiary}"
+                                       HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0"
+                                       IsHitTestVisible="False"/>
+                            <TextBlock Text="搜索" FontSize="12"
+                                       Foreground="{StaticResource W11.TextTertiary}"
+                                       HorizontalAlignment="Left" VerticalAlignment="Center" Margin="26,0,0,0"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=FilterBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
                         <CheckBox Content="子目录" IsChecked="{Binding SearchSubdirectories, Mode=TwoWay}"
                                   Margin="8,0,0,0" VerticalContentAlignment="Center"
                                   ToolTip="勾选后在当前目录及全部子目录中搜索"/>
                     </StackPanel>
                 </Grid>
+                <!-- 右侧动作区：视图 |（组间距）刷新 |（组间距）新建+回收站，组间 12px 制造主次 -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <ComboBox x:Name="ViewModeBox" Width="88" Height="32" Margin="0,0,4,0"
+                    <ComboBox x:Name="ViewModeBox" Width="88" Height="32"
                               SelectedValue="{Binding ViewMode}" SelectedValuePath="Tag"
                               ToolTip="视图模式">
                         <ComboBoxItem Content="详细信息" Tag="Details"/>
@@ -200,10 +226,10 @@
                         <ComboBoxItem Content="列表" Tag="List"/>
                     </ComboBox>
                     <Button Command="{Binding RefreshCommand}" ToolTip="刷新 (F5)" Width="32" Height="32"
-                            Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Margin="16,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE72C;"/>
                     <Button Command="{Binding NewFolderCommand}" ToolTip="新建文件夹" Width="32" Height="32"
-                            Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
+                            Margin="16,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Content="&#xE8F4;"/>
                     <Button Command="{Binding OpenRecycleBinCommand}" ToolTip="打开回收站" Width="32" Height="32"
                             Margin="4,0,0,0" Style="{StaticResource W11.IconButton}" FontSize="16"
@@ -212,9 +238,11 @@
             </Grid>
         </Border>
 
-        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="2">
+        <!-- 标签条融入白色主体：白底承载标签，激活标签与主体同色无接缝 -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource W11.CardBackground}" Padding="4,0,2,0">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Width="22" Height="20" Content="＋"
+                <Button DockPanel.Dock="Right" Width="26" Height="24" Content="&#xE710;" FontSize="10"
+                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                         Style="{StaticResource W11.IconButton}"
                         ToolTip="新建标签页 (Ctrl+T)"
                         Click="NewTabButton_Click"/>
@@ -269,21 +297,13 @@
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                        <StackPanel Margin="0,2">
-                            <StackPanel Orientation="Horizontal">
-                                <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,5,1"
+                        <!-- 驱动器用量信息只在"此电脑"页宽卡呈现；树内保持素净（tooltip 保留容量提示） -->
+                        <StackPanel Orientation="Horizontal" Margin="0,2"
+                                    ToolTip="{Binding UsageTooltip}">
+                            <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,5,1"
+                                   VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <!-- 驱动器用量条 -->
-                            <Border Height="4" Width="110" Margin="25,1,0,2" CornerRadius="2"
-                                    Background="{StaticResource W11.ControlBorder}"
-                                    ToolTip="{Binding UsageTooltip}"
-                                    Visibility="{Binding HasUsageBar, Converter={StaticResource BoolToVis}}">
-                                <Border Background="{StaticResource W11.Accent}" CornerRadius="2" HorizontalAlignment="Left"
-                                        Width="{Binding UsageBarWidth}"/>
-                            </Border>
                         </StackPanel>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>
@@ -297,7 +317,7 @@
 
             <!-- 白底主体下内容区不再做"浮卡"，仅保留拖拽提示用的描边（默认透明） -->
             <Border x:Name="DropZone" Grid.Column="2" BorderThickness="1" BorderBrush="Transparent"
-                    Background="Transparent" Margin="0" Padding="4,4,4,0">
+                    Background="Transparent" Margin="0" Padding="4,2,4,0">
             <ListView x:Name="EntryList"
                       ItemsSource="{Binding Entries}"
                       SelectionMode="Extended"

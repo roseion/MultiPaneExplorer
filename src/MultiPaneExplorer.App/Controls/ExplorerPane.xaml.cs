@@ -255,10 +255,16 @@ public partial class ExplorerPane : UserControl
             var tabButton = new Button
             {
                 Content = content,
-                Margin = new Thickness(0, 2, 3, 0),
-                Background = i == _activeTabIndex ? ActiveTabBrush : Brushes.Transparent,
-                // 卡片形标签（顶部圆角）：激活 = 卡片白底，非激活透明
+                Margin = new Thickness(0, 4, 3, 4),
+                // 激活标签 = 白底+发丝边（与白主体同色融合）；未激活 = 浅灰胶囊
                 Style = System.Windows.Application.Current?.TryFindResource("W11.TabButton") as Style,
+                BorderBrush = i == _activeTabIndex
+                    ? System.Windows.Application.Current?.TryFindResource("W11.ControlBorder") as System.Windows.Media.Brush
+                    : Brushes.Transparent,
+                BorderThickness = new Thickness(1),
+                Background = i == _activeTabIndex
+                    ? System.Windows.Application.Current?.TryFindResource("W11.CardBackground") as System.Windows.Media.Brush
+                    : System.Windows.Application.Current?.TryFindResource("W11.SubtleBackground") as System.Windows.Media.Brush,
             };
             tabButton.Click += (_, _) => SwitchTab(index);
             tabButton.MouseUp += (_, mouse) =>

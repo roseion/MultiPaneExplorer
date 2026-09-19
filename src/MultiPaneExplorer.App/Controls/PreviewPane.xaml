@@ -2,12 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
-        <!-- 空态 -->
+        <!-- 空态：大图标 + 主/副两行文字 -->
         <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="&#xE8A9;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="42"
+            <TextBlock Text="&#xE8A9;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="56"
                        HorizontalAlignment="Center" Foreground="{StaticResource W11.TextTertiary}"/>
-            <TextBlock Text="选择要预览的项目" HorizontalAlignment="Center" Margin="0,8,0,0"
-                       Foreground="{StaticResource W11.TextSecondary}"/>
+            <TextBlock Text="选择要预览的项目" HorizontalAlignment="Center" Margin="0,12,0,0"
+                       FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource W11.TextPrimary}"/>
+            <TextBlock Text="支持图片、文本与文件信息" HorizontalAlignment="Center" Margin="0,4,0,0"
+                       FontSize="12" Foreground="{StaticResource W11.TextTertiary}"/>
         </StackPanel>
 
         <DockPanel x:Name="ContentRoot" Visibility="Collapsed">
