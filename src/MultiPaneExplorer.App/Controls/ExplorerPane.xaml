@@ -111,6 +111,8 @@
         <!-- Win11 风列头：透明底+悬停浅灰，右缘 Thumb 拖拽调宽 -->
         <!-- 列头：无边框（悬停才显胶囊底），去表格感 -->
         <Style TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="GridViewColumnHeader">
@@ -141,6 +143,11 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- FILL 填充列头（列表右侧空白列头区）：WPF 默认用白色系统视觉，暗色下是白色残块。
+             通过 GridView.ColumnHeaderContainerStyle 让包括 FILL 列在内的所有列头走透明模板 -->
+        <Style x:Key="W11.ColumnHeaderTransparent" TargetType="GridViewColumnHeader"
+               BasedOn="{StaticResource {x:Type GridViewColumnHeader}}"/>
     </UserControl.Resources>
     <DockPanel>
         <!-- 命令行：Finder 式呼吸圈（上 8 左右 20 下 6），与标签条之间靠留白分层 -->
@@ -332,6 +339,7 @@
             <Border x:Name="DropZone" Grid.Column="2" BorderThickness="1" BorderBrush="Transparent"
                     Background="{DynamicResource W11.CardBackground}" CornerRadius="8" Padding="12,6,12,6">
             <ListView x:Name="EntryList"
+                      Background="Transparent"
                       ItemsSource="{Binding Entries}"
                       SelectionMode="Extended"
                       SelectionChanged="EntryList_SelectionChanged"
@@ -507,7 +515,8 @@
                     </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.View>
-                    <GridView x:Name="EntryView">
+                    <GridView x:Name="EntryView"
+                             ColumnHeaderContainerStyle="{StaticResource W11.ColumnHeaderTransparent}">
                         <GridViewColumn x:Name="IconColumn" Header="" Width="26" CellTemplate="{StaticResource IconTemplate}"/>
                         <GridViewColumn x:Name="NameColumn" Header="名称" Width="280" CellTemplate="{StaticResource NameCellTemplate}"/>
                         <GridViewColumn x:Name="ModifiedColumn" Header="修改时间" Width="140" DisplayMemberBinding="{Binding Modified}"/>
