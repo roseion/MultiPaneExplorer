@@ -114,7 +114,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="GridViewColumnHeader">
                         <Grid>
-                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4"
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="6"
                                     Margin="0,2" Padding="6,4">
                                 <TextBlock Text="{TemplateBinding Content}" VerticalAlignment="Center"
                                            FontSize="12" FontWeight="SemiBold"
@@ -165,7 +165,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <Grid VerticalAlignment="Center" MinHeight="30">
-                        <Border x:Name="CrumbBar" Background="{StaticResource W11.CardBackground}" CornerRadius="4" Padding="6,0"
+                        <Border x:Name="CrumbBar" Background="{StaticResource W11.CardBackground}" CornerRadius="6" Padding="6,0"
                                 BorderBrush="{StaticResource W11.ControlBorder}" BorderThickness="1"
                                 MouseLeftButtonDown="CrumbBar_MouseLeftButtonDown"
                                 ToolTip="点击空白处输入路径；点击各段跳转，▼ 展开子目录">
@@ -427,7 +427,7 @@
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListViewItem">
                                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                            CornerRadius="4" SnapsToDevicePixels="True">
+                                            CornerRadius="6" SnapsToDevicePixels="True">
                                         <GridViewRowPresenter Content="{TemplateBinding Content}"
                                                               Columns="{TemplateBinding GridView.ColumnCollection}"
                                                               Margin="{TemplateBinding Padding}"/>
@@ -451,7 +451,7 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
                                             <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                                    CornerRadius="4" SnapsToDevicePixels="True">
+                                                    CornerRadius="6" SnapsToDevicePixels="True">
                                                 <ContentPresenter Content="{TemplateBinding Content}"
                                                                   ContentTemplate="{TemplateBinding ContentTemplate}"
                                                                   HorizontalAlignment="Center" VerticalAlignment="Top"/>
@@ -473,7 +473,7 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListViewItem">
                                             <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                                    CornerRadius="4" SnapsToDevicePixels="True">
+                                                    CornerRadius="6" SnapsToDevicePixels="True">
                                                 <ContentPresenter Content="{TemplateBinding Content}"
                                                                   ContentTemplate="{TemplateBinding ContentTemplate}"
                                                                   HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
