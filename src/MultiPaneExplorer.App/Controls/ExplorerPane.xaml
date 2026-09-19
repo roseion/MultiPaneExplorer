@@ -11,7 +11,8 @@
         </DataTemplate>
         <DataTemplate x:Key="NameCellTemplate">
             <Grid>
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="14"
+                           TextTrimming="CharacterEllipsis"
                            Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVis}}"/>
                 <TextBox x:Name="RenameBox" Margin="0,-1" Padding="1,0" VerticalContentAlignment="Center"
                          Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVis}}"
@@ -39,7 +40,7 @@
             <StackPanel Orientation="Horizontal" Margin="4,1">
                 <Image Source="{Binding IconLarge}" Width="20" Height="20" Margin="0,1,6,1" VerticalAlignment="Center"/>
                 <Grid>
-                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"
                                Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVis}}"/>
                     <TextBox x:Name="RenameBox" MinWidth="120" Margin="0,-1" Padding="1,0" VerticalContentAlignment="Center"
                              Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVis}}"
@@ -121,10 +122,15 @@
                                            Foreground="{StaticResource W11.TextSecondary}"/>
                             </Border>
                             <Thumb x:Name="Resizer" Width="6" HorizontalAlignment="Right" Cursor="SizeWE"
-                                   Background="Transparent"
                                    DragStarted="ColumnResizer_DragStarted"
                                    DragDelta="ColumnResizer_DragDelta"
-                                   DragCompleted="ColumnResizer_DragCompleted"/>
+                                   DragCompleted="ColumnResizer_DragCompleted">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="Thumb">
+                                        <Rectangle Fill="Transparent"/>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -137,8 +143,8 @@
         </Style>
     </UserControl.Resources>
     <DockPanel>
-        <!-- 命令/地址行（Explorer 式）：导航钮 32px｜面包屑+搜索（弹性）｜视图与动作 -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="8,6" MinHeight="48">
+        <!-- 命令行：Finder 式呼吸圈（上 8 左右 20 下 6），与标签条之间靠留白分层 -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource W11.LayerBackground}" Padding="20,8,20,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -238,8 +244,9 @@
             </Grid>
         </Border>
 
-        <!-- 标签条融入白色主体：白底承载标签，激活标签与主体同色无接缝 -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource W11.CardBackground}" Padding="4,0,2,0">
+        <!-- 标签条：白底主体延伸上来，与命令行之间 14px 留白分层（Finder 分层节奏） -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource W11.CardBackground}" Padding="20,0,20,0"
+                Margin="0,14,0,0">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Width="26" Height="24" Content="&#xE710;" FontSize="10"
                         FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -253,16 +260,17 @@
             </DockPanel>
         </Border>
 
-        <Border DockPanel.Dock="Bottom" Background="{StaticResource W11.LayerBackground}" Padding="8,2"
+        <!-- 状态栏：同暖灰层，上缘极浅 hairline -->
+        <Border DockPanel.Dock="Bottom" Background="{StaticResource W11.LayerBackground}" Padding="20,4"
                 BorderBrush="{StaticResource W11.Divider}" BorderThickness="0,1,0,0">
             <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource W11.TextSecondary}"
                        TextTrimming="CharacterEllipsis"/>
         </Border>
 
-        <!-- 主体全白（用户偏好）：文件树与文件列表同处白色背景，仅顶部命令行保留 Mica 灰 -->
-        <Grid Background="{StaticResource W11.CardBackground}">
+        <!-- 主体：白色列表区 + 毛玻璃浅灰侧栏（材质区分，Finder 式）；四周 20px 呼吸圈 -->
+        <Grid Background="{StaticResource W11.LayerBackground}" Margin="20,14,20,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="TreeColumn" Width="200" MinWidth="120" MaxWidth="520"/>
+                <ColumnDefinition x:Name="TreeColumn" Width="240" MinWidth="160" MaxWidth="520"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -283,41 +291,45 @@
                 </Border>
             </Popup>
 
-            <TreeView x:Name="DirTree" Grid.Column="0" Margin="4,2,0,0"
-                      ItemsSource="{Binding TreeRoots}"
-                      Visibility="{Binding ShowTree, Converter={StaticResource BoolToVis}}"
-                      SelectedItemChanged="DirTree_SelectedItemChanged"
-                      ContextMenuOpening="DirTree_ContextMenuOpening">
-                <TreeView.ItemContainerStyle>
-                    <Style TargetType="TreeViewItem">
-                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
-                        <EventSetter Event="Expanded" Handler="DirTree_ItemExpanded"/>
-                    </Style>
-                </TreeView.ItemContainerStyle>
-                <TreeView.ItemTemplate>
-                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                        <!-- 驱动器用量信息只在"此电脑"页宽卡呈现；树内保持素净（tooltip 保留容量提示） -->
-                        <StackPanel Orientation="Horizontal" Margin="0,2"
-                                    ToolTip="{Binding UsageTooltip}">
-                            <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,5,1"
-                                   VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+            <!-- 侧栏：毛玻璃浅灰底（与白色内容区材质区分），圆角 8，行内左缩进靠树自身缩进 -->
+            <Border Grid.Column="0" Background="{StaticResource W11.SubtleBackground}" CornerRadius="8"
+                    Margin="0,0,0,0" Padding="8,6"
+                    Visibility="{Binding ShowTree, Converter={StaticResource BoolToVis}}">
+                <TreeView x:Name="DirTree"
+                          ItemsSource="{Binding TreeRoots}"
+                          SelectedItemChanged="DirTree_SelectedItemChanged"
+                          ContextMenuOpening="DirTree_ContextMenuOpening">
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                            <EventSetter Event="Expanded" Handler="DirTree_ItemExpanded"/>
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                            <!-- 驱动器用量信息只在"此电脑"页宽卡呈现；树内保持素净（tooltip 保留容量提示） -->
+                            <StackPanel Orientation="Horizontal" Margin="0,2"
+                                        ToolTip="{Binding UsageTooltip}">
+                                <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,6,1"
                                        VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                </TreeView.ItemTemplate>
-            </TreeView>
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+            </Border>
 
-            <GridSplitter x:Name="TreeSplitter" Grid.Column="1" Width="6"
+            <GridSplitter x:Name="TreeSplitter" Grid.Column="1" Width="10"
                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                          Background="{StaticResource W11.Splitter}"
+                          Background="Transparent"
                           ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
                           ToolTip="拖拽调整文件树宽度"/>
 
-            <!-- 白底主体下内容区不再做"浮卡"，仅保留拖拽提示用的描边（默认透明） -->
+            <!-- 内容区：白色圆角卡浮在暖灰层上（Finder 内容卡），拖拽提示临时改描边色 -->
             <Border x:Name="DropZone" Grid.Column="2" BorderThickness="1" BorderBrush="Transparent"
-                    Background="Transparent" Margin="0" Padding="4,2,4,0">
+                    Background="{StaticResource W11.CardBackground}" CornerRadius="8" Padding="12,6,12,6">
             <ListView x:Name="EntryList"
                       ItemsSource="{Binding Entries}"
                       SelectionMode="Extended"

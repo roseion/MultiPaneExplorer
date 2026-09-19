@@ -191,6 +191,9 @@ public partial class ExplorerPane : UserControl
     private void UpdateTreeColumnVisibility()
     {
         var visible = Vm.ShowTree;
+        // 树的宿主 Border（毛玻璃浅灰底）与列一起显隐
+        if (DirTree.Parent is Border host)
+            host.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         if (visible)
         {
             TreeColumn.Width = new GridLength(_treeColumnWidth);
@@ -1420,11 +1423,11 @@ public partial class ExplorerPane : UserControl
     }
 
     private void EntryList_DragLeave(object sender, DragEventArgs e) =>
-        DropZone.BorderBrush = Brushes.Transparent;
+        DropZone.BorderBrush = System.Windows.Application.Current?.TryFindResource("W11.CardBorder") as System.Windows.Media.Brush ?? Brushes.Transparent;
 
     private void EntryList_Drop(object sender, DragEventArgs e)
     {
-        DropZone.BorderBrush = Brushes.Transparent;
+        DropZone.BorderBrush = System.Windows.Application.Current?.TryFindResource("W11.CardBorder") as System.Windows.Media.Brush ?? Brushes.Transparent;
         // Drop 事件的 e.Effects 不保证携带最后一次 DragOver 的结果，用自己记录的值
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } paths)
             _ = Vm.PastePathsAsync(paths, move: _pendingDropEffect.HasFlag(DragDropEffects.Move));
