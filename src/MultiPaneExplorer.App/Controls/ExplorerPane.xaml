@@ -59,9 +59,11 @@
         <ItemsPanelTemplate x:Key="DetailsItemsPanel">
             <VirtualizingStackPanel/>
         </ItemsPanelTemplate>
-        <!-- 标签页卡片：激活 = 白底与主体融为一体；未激活 = 浅灰胶囊（白底上可辨） -->
+        <!-- 标签页卡片：颜色全部走 DynamicResource 触发器（本地值会卡死主题切换）；
+             激活 = 卡片底+发丝边，未激活 = 浅灰胶囊。激活态由代码设 Tag="Active" -->
         <Style x:Key="W11.TabButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource W11.SubtleBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Padding" Value="12,5"/>
@@ -76,15 +78,21 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.SubtleBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.HoverBackground}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.HoverBackground}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.PressedBackground}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="Active">
+                    <Setter Property="Background" Value="{DynamicResource W11.CardBackground}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource W11.ControlBorder}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
         <!-- 此电脑页：驱动器宽卡 -->
         <DataTemplate x:Key="DriveCardTemplate">
