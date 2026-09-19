@@ -1151,12 +1151,14 @@ public partial class PaneViewModel : ObservableObject
         {
             if (path is null)
             {
+                var driveIndex = 0;
                 foreach (var drive in DriveInfo.GetDrives()
                              .Where(d => d.IsReady)
                              .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
                 {
                     double? usedFraction = null;
                     var infoText = string.Empty;
+                    var tint = driveIndex++;
                     try
                     {
                         if (drive.TotalSize > 0)
@@ -1177,6 +1179,7 @@ public partial class PaneViewModel : ObservableObject
                         ModifiedTime = default,
                         DriveUsedFraction = usedFraction,
                         DriveInfoText = infoText,
+                        TintIndex = tint,
                     });
                 }
             }

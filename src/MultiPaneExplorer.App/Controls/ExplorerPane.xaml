@@ -97,7 +97,10 @@
         </Style>
         <!-- 此电脑页：驱动器宽卡 -->
         <DataTemplate x:Key="DriveCardTemplate">
-            <Border Width="320" Margin="8,6" VerticalAlignment="Top">
+            <!-- 彩卡底色（参考图 4 的彩色文件夹卡）：按序号在 4 种浅色间轮换 -->
+            <Border Width="320" Margin="8,6" VerticalAlignment="Top" CornerRadius="10"
+                    Background="{Binding TintIndex, Converter={StaticResource TintBrush}}">
+
                 <StackPanel Orientation="Horizontal">
                     <Image Source="{Binding IconLarge}" Width="40" Height="40" VerticalAlignment="Center"/>
                     <StackPanel Margin="12,0,0,0" VerticalAlignment="Center" Width="236">
@@ -373,6 +376,15 @@
                         Effect="{StaticResource W11.CardShadow}"/>
                 <Border x:Name="DropZone" BorderThickness="1" BorderBrush="Transparent"
                         Background="{DynamicResource W11.CardBackground}" CornerRadius="12" Padding="12,6,12,6">
+            <DockPanel>
+            <!-- 缩略图画廊条（参考图 2）：详细信息视图 + 双栏布局时显示，点击选中对应条目 -->
+            <Border x:Name="GalleryBar" DockPanel.Dock="Bottom" Visibility="Collapsed"
+                    Margin="0,6,0,2">
+                <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                              Height="96">
+                    <StackPanel x:Name="GalleryStrip" Orientation="Horizontal"/>
+                </ScrollViewer>
+            </Border>
             <ListView x:Name="EntryList"
                       Background="Transparent"
                       ItemsSource="{Binding Entries}"
@@ -562,6 +574,7 @@
                     </GridView>
                 </ListView.View>
             </ListView>
+            </DockPanel>
             </Border>
             </Grid>
         </Grid>

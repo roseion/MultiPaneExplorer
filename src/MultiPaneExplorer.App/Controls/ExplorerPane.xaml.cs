@@ -139,8 +139,12 @@ public partial class ExplorerPane : UserControl
         tab.SelectionChanged += () => SelectionChanged?.Invoke();
         tab.Entries.CollectionChanged += (_, e) =>
         {
-            if (ReferenceEquals(tab, Vm) && tab.ViewMode != "Details" && e.NewItems is not null)
+            if (!ReferenceEquals(tab, Vm))
+                return;
+            if (tab.ViewMode != "Details" && e.NewItems is not null)
                 ThumbnailLoader.EnqueueRange(e.NewItems.Cast<FsEntry>());
+            if (GalleryBar is { Visibility: Visibility.Visible })
+                PopulateGallery();
         };
         return tab;
     }
@@ -449,6 +453,7 @@ public partial class ExplorerPane : UserControl
                 EntryList.View = EntryView; // x:Name 的 GridView（详细信息）
                 break;
         }
+        UpdateGalleryVisibility();
     }
 
     private void DirTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -897,6 +902,64 @@ public partial class ExplorerPane : UserControl
         var window = Window.GetWindow(this);
         var ownerHwnd = window is null ? IntPtr.Zero : new System.Windows.Interop.WindowInteropHelper(window).Handle;
         FileOps.Core.ShellDialogs.ShowFileProperties(ownerHwnd, Vm.SelectedPaths[0]);
+    }
+
+    // ---- 缩略图画廊条（参考图 2）：详细信息 + 双栏布局时显示，点击选中对应条目 ----
+
+    private bool _galleryAllowed;
+
+    /// <summary>MainWindow 下发：当前布局是否允许画廊（双栏）+ 全局开关。 </summary>
+    public void SetGalleryAllowed(bool allowed)
+    {
+        _galleryAllowed = allowed;
+        UpdateGalleryVisibility();
+    }
+
+    private void UpdateGalleryVisibility()
+    {
+        if (GalleryBar is null)
+            return;
+        var show = _galleryAllowed && Vm.ViewMode == "Details" && Vm.CurrentPath is not null;
+        GalleryBar.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (show)
+            PopulateGallery();
+    }
+
+    private void PopulateGallery()
+    {
+        GalleryStrip.Children.Clear();
+        foreach (var entry in Vm.Entries.Where(e => !e.IsDirectory && ThumbnailLoader.IsImageFile(e.Name)))
+        {
+            ThumbnailLoader.Enqueue(entry); // 画廊与大图标视图共用 96px 缓存
+            var index = GalleryStrip.Children.Count;
+            var card = new Border
+            {
+                Width = 92,
+                Margin = new Thickness(0, 0, 8, 0),
+                CornerRadius = new CornerRadius(8),
+                Background = System.Windows.Application.Current?.TryFindResource("W11.CardBackground") as System.Windows.Media.Brush,
+                BorderBrush = System.Windows.Application.Current?.TryFindResource("W11.ControlBorder") as System.Windows.Media.Brush,
+                BorderThickness = new Thickness(1),
+                Child = new Image
+                {
+                    Width = 80,
+                    Height = 80,
+                    Stretch = Stretch.Uniform,
+                    Margin = new Thickness(4),
+                },
+            };
+            ((Image)card.Child).SetBinding(Image.SourceProperty, new System.Windows.Data.Binding("LargeIcon"));
+            card.DataContext = entry;
+            card.MouseLeftButtonDown += (_, _) =>
+            {
+                if (Vm.Entries.Contains(entry))
+                {
+                    EntryList.SelectedItem = entry;
+                    EntryList.ScrollIntoView(entry);
+                }
+            };
+            GalleryStrip.Children.Add(card);
+        }
     }
 
     /// <summary>状态栏视图切换钮：详细信息/大图标。</summary>

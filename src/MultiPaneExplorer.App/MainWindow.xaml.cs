@@ -43,6 +43,7 @@ public partial class MainWindow : Window
 
     private bool _showHidden;
     private bool _showPreview;
+    private bool _galleryEnabled = true;
     private double _previewWidth = 260;
 
     public MainWindow()
@@ -117,10 +118,13 @@ public partial class MainWindow : Window
 
         _lastFocusedPane = _panes[0];
 
-        // 主题：应用会话设置（Light/Dark/System），跟随系统时挂 WM_SETTINGCHANGE 钩子
+        // 主题：应用会话设置（Light/Dark/System）与强调色，跟随系统时挂 WM_SETTINGCHANGE 钩子
         ThemeManager.ApplySelected(string.IsNullOrEmpty(session.Theme)
             ? Models.ThemeManager.System
             : session.Theme);
+        ThemeManager.ApplyAccent(session.AccentIndex);
+
+        _galleryEnabled = session.GalleryEnabled;
 
         // 全局开关状态字段化（原标题栏控件的值迁入"查看"菜单）
         _showHidden = session.ShowHiddenFiles;
@@ -151,6 +155,8 @@ public partial class MainWindow : Window
                     ? 260
                     : PreviewBorder.Width,
                 Theme = ThemeManager.SelectedTheme,
+                AccentIndex = ThemeManager.SelectedAccentIndex,
+                GalleryEnabled = _galleryEnabled,
                 Panes = _panes.Select(pane => pane.CaptureState()).ToList(),
             });
         }
@@ -193,6 +199,46 @@ public partial class MainWindow : Window
     private void ApplyBackdrop() =>
         RootPanel.Background = ThemeManager.BuildBackdropBrush();
 
+    /// <summary>画廊条显隐联动：仅双栏布局 + 全局开关开启时允许。</summary>
+    private void RefreshGalleryAllowed()
+    {
+        var allow = _galleryEnabled && _layout == PaneLayout.Two;
+        foreach (var pane in _panes)
+            pane.SetGalleryAllowed(allow);
+    }
+
+    // ---- 供设置窗口调用的公开入口 ----
+
+    public void SetShowHiddenFilesAll(bool show)
+    {
+        _showHidden = show;
+        ApplyHiddenFiles();
+    }
+
+    public void SetPreviewVisible(bool show)
+    {
+        _showPreview = show;
+        ApplyPreviewVisibility();
+    }
+
+    public void SetGalleryEnabled(bool enabled)
+    {
+        _galleryEnabled = enabled;
+        RefreshGalleryAllowed();
+    }
+
+    public void ApplyLayoutByTag(string tag)
+    {
+        if (Enum.TryParse<PaneLayout>(tag, out var layout) && _layout != layout)
+            ApplyLayout(layout);
+    }
+
+    public string CurrentLayoutTag => _layout.ToString();
+    public bool ShowHidden => _showHidden;
+    public bool ShowPreview => _showPreview;
+    public bool GalleryEnabled => _galleryEnabled;
+
+
     private void ApplyLayout(PaneLayout layout)
     {
         _layout = layout;
@@ -233,7 +279,6 @@ public partial class MainWindow : Window
         }
         else
         {
-            PaneGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             PaneGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             PaneGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             PaneGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -258,6 +303,7 @@ public partial class MainWindow : Window
             horizontal.SetValue(Grid.ColumnSpanProperty, 3);
             PaneGrid.Children.Add(horizontal);
         }
+        RefreshGalleryAllowed();
     }
 
     private static GridSplitter NewColumnSplitter() => new()
@@ -456,6 +502,23 @@ public partial class MainWindow : Window
         };
         menu.Items.Add(previewItem);
 
+        var galleryItem = new MenuItem
+        {
+            Header = "缩略图画廊（双栏时显示）",
+            IsCheckable = true,
+            IsChecked = _galleryEnabled,
+        };
+        galleryItem.Click += (_, _) =>
+        {
+            _galleryEnabled = galleryItem.IsChecked;
+            RefreshGalleryAllowed();
+        };
+        menu.Items.Add(galleryItem);
+
+        var settingsItem = new MenuItem { Header = "设置…" };
+        settingsItem.Click += (_, _) => new Views.SettingsWindow().Show();
+        menu.Items.Add(settingsItem);
+
         menu.Items.Add(new Separator());
 
         // 外观：主题三态（即时切换，随会话记忆）
@@ -504,6 +567,9 @@ public partial class MainWindow : Window
     }
 
     /// <summary>主题选择即时写入会话文件（不等退出）。</summary>
+    /// <summary>供设置窗口即时保存会话。</summary>
+    public void SaveSessionSnapshot() => SaveSession();
+
     private void SaveSessionTheme()
     {
         try

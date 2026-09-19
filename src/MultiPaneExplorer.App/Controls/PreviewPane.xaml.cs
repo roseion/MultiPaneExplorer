@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows.Media;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -56,6 +57,14 @@ public partial class PreviewPane : UserControl
         ImageHost.Visibility = Visibility.Collapsed;
         TextHost.Visibility = Visibility.Collapsed;
         InfoPanel.Visibility = Visibility.Collapsed;
+        DrivePanel.Visibility = Visibility.Collapsed;
+
+        // 驱动器根目录：环形容量卡（参考图 3 的 Storage 卡）
+        if (entry.IsDirectory && IsDriveRoot(entry) && entry.DriveUsedFraction is { } fraction)
+        {
+            ShowDriveCard(entry, fraction);
+            return;
+        }
 
         if (entry.IsDirectory)
         {
@@ -92,6 +101,52 @@ public partial class PreviewPane : UserControl
         InfoText.Text = message;
         InfoPanel.Visibility = Visibility.Visible;
         ContentRoot.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>判断条目是否为盘符根目录（驱动器环形卡触发条件）。</summary>
+    private static bool IsDriveRoot(FsEntry entry)
+    {
+        var root = Path.GetPathRoot(entry.FullPath);
+        return root is not null && string.Equals(
+            root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            entry.FullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>驱动器环形容量卡：圆环进度 + 百分比 + 盘名 + 容量文字。</summary>
+    private void ShowDriveCard(FsEntry entry, double fraction)
+    {
+        DriveNameText.Text = entry.Name;
+        DriveSpaceText.Text = entry.DriveInfoText;
+        DonutPercent.Text = $"{Math.Round(fraction * 100)}%";
+        DonutValue.Data = BuildArcGeometry(61, fraction);
+        DrivePanel.Visibility = Visibility.Visible;
+        ContentRoot.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>构建圆环值弧：从正上方顺时针扫 fraction 圈。</summary>
+    private static Geometry BuildArcGeometry(double radius, double fraction)
+    {
+        fraction = Math.Clamp(fraction, 0.01, 1);
+        var center = new Point(radius + 14, radius + 14); // 150 容器内留出线宽
+        var start = new Point(center.X, center.Y - radius);
+        var angle = fraction * 2 * Math.PI;
+        var end = new Point(
+            center.X + radius * Math.Sin(angle),
+            center.Y - radius * Math.Cos(angle));
+
+        var figure = new PathFigure { StartPoint = start, IsClosed = false };
+        figure.Segments.Add(new ArcSegment
+        {
+            Point = end,
+            Size = new Size(radius, radius),
+            IsLargeArc = fraction > 0.5,
+            SweepDirection = SweepDirection.Clockwise,
+        });
+        var geometry = new PathGeometry();
+        geometry.Figures.Add(figure);
+        geometry.Freeze();
+        return geometry;
     }
 
     private static string DescribeMeta(FsEntry entry) => entry.IsDirectory

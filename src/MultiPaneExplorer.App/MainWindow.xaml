@@ -169,10 +169,11 @@
                 </StackPanel>
             </Border>
         </Popup>
-        <!-- 全局预览栏（白底）：跟随最近聚焦窗格的选中项（分隔条在其左侧，可拖宽） -->
-        <Border x:Name="PreviewBorder" DockPanel.Dock="Right" Width="260" MinWidth="180" MaxWidth="480"
-                Background="{DynamicResource W11.CardBackground}"
-                BorderBrush="{DynamicResource W11.Divider}" BorderThickness="1,0,0,0"
+        <!-- 全局预览栏：独立圆角卡片 + 柔影（参考图 3 右栏样式） -->
+        <Border x:Name="PreviewBorder" DockPanel.Dock="Right" Width="280" MinWidth="200" MaxWidth="480"
+                Margin="0,14,20,8"
+                Background="{DynamicResource W11.CardBackground}" CornerRadius="12"
+                Effect="{StaticResource W11.CardShadow}"
                 Visibility="Collapsed">
             <controls:PreviewPane x:Name="Preview"/>
         </Border>

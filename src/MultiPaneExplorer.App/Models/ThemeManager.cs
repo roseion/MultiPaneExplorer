@@ -21,6 +21,61 @@ public static class ThemeManager
 
     public static string CurrentEffective { get; private set; } = Light;
 
+    /// <summary>强调色可选集（索引即色板序号）；浅/深两套端值。</summary>
+    public static readonly (string Name, Color Light, Color Dark)[] Accents =
+    [
+        ("蓝", Color.FromRgb(0x0A, 0x60, 0xFF), Color.FromRgb(0x40, 0x9C, 0xFF)),
+        ("紫", Color.FromRgb(0x7B, 0x5C, 0xF5), Color.FromRgb(0xA6, 0x8B, 0xFF)),
+        ("绿", Color.FromRgb(0x0E, 0x9F, 0x6E), Color.FromRgb(0x2C, 0xC5, 0x8C)),
+        ("粉", Color.FromRgb(0xE5, 0x46, 0x7F), Color.FromRgb(0xF2, 0x6B, 0x9C)),
+        ("橙", Color.FromRgb(0xF0, 0x79, 0x3C), Color.FromRgb(0xF7, 0x9B, 0x68)),
+    ];
+
+    /// <summary>当前强调色索引（0-4）。</summary>
+    public static int SelectedAccentIndex { get; private set; }
+
+    /// <summary>按当前有效主题应用强调色（主题切换后也需再调一次）。
+    /// 实现方式：构建独立强调色字典（4 支新画刷）插入合并字典末尾——后加入的字典优先级最高，
+    /// 覆盖 token 字典里的同名键；整体替换而非原地改色（运行时加进 App 资源的画刷会被密封冻结）。</summary>
+    public static void ApplyAccent(int index)
+    {
+        SelectedAccentIndex = Math.Clamp(index, 0, Accents.Length - 1);
+        var accent = Accents[SelectedAccentIndex];
+        var main = CurrentEffective == Dark ? accent.Dark : accent.Light;
+        Color Brighten(float factor, byte alpha) => Color.FromArgb(
+            alpha,
+            (byte)Math.Clamp((int)Math.Round(main.R * factor), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(main.G * factor), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(main.B * factor), 0, 255));
+
+        var accentDict = new ResourceDictionary
+        {
+            ["W11.Accent"] = new SolidColorBrush(main),
+            ["W11.AccentHover"] = new SolidColorBrush(Brighten(
+                CurrentEffective == Dark ? 1.12f : 1.25f, 0xFF)),
+            ["W11.AccentPressed"] = new SolidColorBrush(Brighten(
+                CurrentEffective == Dark ? 0.82f : 0.72f, 0xFF)),
+            ["W11.AccentTint"] = new SolidColorBrush(Brighten(
+                CurrentEffective == Dark ? 0.30f : 2.2f, 0xE6)),
+        };
+
+        var dictionaries = Application.Current.Resources.MergedDictionaries;
+        if (_accentDictionary is not null)
+        {
+            var at = dictionaries.IndexOf(_accentDictionary);
+            if (at >= 0)
+            {
+                dictionaries[at] = accentDict; // 原位替换
+                _accentDictionary = accentDict;
+                return;
+            }
+        }
+        dictionaries.Add(accentDict); // 后加入的合并字典查找优先级最高
+        _accentDictionary = accentDict;
+    }
+
+    private static ResourceDictionary? _accentDictionary;
+
     /// <summary>有效主题变化后触发（含首次 Apply）；用于重建渐变背景等无法经 DynamicResource 更新的视觉。</summary>
     public static event Action? ThemeChanged;
 
@@ -53,6 +108,7 @@ public static class ThemeManager
         }
 
         HookSystemThemeChanges();
+        ApplyAccent(SelectedAccentIndex); // 强调色随主题重应用（深浅端值不同）
         if (changed)
             ThemeChanged?.Invoke();
     }

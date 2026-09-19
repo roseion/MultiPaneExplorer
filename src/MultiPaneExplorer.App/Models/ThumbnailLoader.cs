@@ -16,6 +16,10 @@ public static class ThumbnailLoader
 
     private static readonly SemaphoreSlim Gate = new(2);
     private static readonly ConcurrentDictionary<string, ImageSource> Cache = new();
+    /// <summary>判断文件名是否为可生成缩略图的图片（画廊条等使用）。</summary>
+    public static bool IsImageFile(string fileName) =>
+        ImageExtensions.Contains(Path.GetExtension(fileName));
+
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff", ".ico",

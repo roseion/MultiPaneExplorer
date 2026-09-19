@@ -21,6 +21,9 @@ public sealed class FsEntry : System.ComponentModel.INotifyPropertyChanged
     /// <summary>驱动器用量比例（"此电脑"页宽卡用）；非驱动器条目为 null。</summary>
     public double? DriveUsedFraction { get; init; }
 
+    /// <summary>彩卡底色索引（0-3，此电脑页驱动器卡着色）。</summary>
+    public int TintIndex { get; init; }
+
     /// <summary>驱动器容量说明（"xx GB 可用，共 yy GB"）。</summary>
     public string DriveInfoText { get; init; } = string.Empty;
 

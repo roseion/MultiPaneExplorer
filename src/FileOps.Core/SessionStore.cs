@@ -48,6 +48,12 @@ public sealed class SessionState
     /// <summary>主题：Light / Dark / System（跟随 Windows）。缺省跟随系统。</summary>
     public string Theme { get; set; } = "System";
 
+    /// <summary>详细信息视图下方的缩略图画廊条（双栏布局时显示）；缺省开。</summary>
+    public bool GalleryEnabled { get; set; } = true;
+
+    /// <summary>强调色索引（0-4，设置窗口色板选择）。</summary>
+    public int AccentIndex { get; set; }
+
     public List<PaneState> Panes { get; set; } = [];
 }
 
