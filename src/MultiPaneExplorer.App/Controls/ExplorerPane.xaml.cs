@@ -36,6 +36,7 @@ public partial class ExplorerPane : UserControl
     private HashSet<FsEntry> _rubberBandBase = [];
     private RubberBandAdorner? _rubberAdorner;
     private double _treeColumnWidth = 200;
+    private double _treeColumnMinWidth = 160; // 与 XAML 中 TreeColumn.MinWidth 一致；隐藏列时归零、恢复时还原
     private readonly List<PaneViewModel> _tabs = [];
     private int _activeTabIndex;
 
@@ -187,21 +188,25 @@ public partial class ExplorerPane : UserControl
         EntryList.Focus();
     }
 
-    /// <summary>文件树显示/隐藏时联动列宽与分隔条：隐藏前记忆宽度，恢复时还原。</summary>
+    /// <summary>文件树显示/隐藏时联动列宽与分隔条：隐藏前记忆宽度，恢复时还原。
+    /// 隐藏时必须同时把列 MinWidth 归零——Width=0 会被 MinWidth=160 钳制，
+    /// 留下 160px 的占位列（老高 2026-09-19 反馈的"关闭后残留占位符"即此因）。</summary>
     private void UpdateTreeColumnVisibility()
     {
         var visible = Vm.ShowTree;
-        // 树的宿主 Border（毛玻璃浅灰底）与列一起显隐
+        // 树的宿主 Border（浅灰底）与列一起显隐
         if (DirTree.Parent is Border host)
             host.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         if (visible)
         {
+            TreeColumn.MinWidth = _treeColumnMinWidth;
             TreeColumn.Width = new GridLength(_treeColumnWidth);
         }
         else
         {
             if (TreeColumn.Width.IsAbsolute && TreeColumn.Width.Value >= TreeColumn.MinWidth)
                 _treeColumnWidth = TreeColumn.Width.Value;
+            TreeColumn.MinWidth = 0;
             TreeColumn.Width = new GridLength(0);
         }
         TreeSplitter.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
