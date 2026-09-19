@@ -291,8 +291,9 @@
                 </Border>
             </Popup>
 
-            <!-- 侧栏：毛玻璃浅灰底（与白色内容区材质区分），圆角 8，行内左缩进靠树自身缩进 -->
-            <Border Grid.Column="0" Background="{StaticResource W11.SubtleBackground}" CornerRadius="8"
+            <!-- 侧栏：与文件列表同色（白色圆角卡，用户偏好统一） -->
+            <Border Grid.Column="0" Background="{StaticResource W11.CardBackground}" CornerRadius="8"
+                    BorderBrush="{StaticResource W11.CardBorder}" BorderThickness="1"
                     Margin="0,0,0,0" Padding="8,6"
                     Visibility="{Binding ShowTree, Converter={StaticResource BoolToVis}}">
                 <TreeView x:Name="DirTree"
