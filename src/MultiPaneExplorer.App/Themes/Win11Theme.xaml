@@ -271,6 +271,8 @@
     </Style>
 
     <!-- ============ ToolTip（深色气泡 8px 圆角） ============ -->
+    <!-- 卡片柔影（双层投影法：投影层 + 内容层，列表重渲染不进位图） -->
+    <DropShadowEffect x:Key="W11.CardShadow" BlurRadius="32" ShadowDepth="8" Direction="270" Opacity="0.10" Color="#1B2A4A"/>
     <Style TargetType="ToolTip">
         <Setter Property="Background" Value="{DynamicResource W11.TooltipBackground}"/>
         <Setter Property="Foreground" Value="#FFFFFF"/>

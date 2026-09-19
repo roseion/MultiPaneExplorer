@@ -50,6 +50,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         CreatePanes();
         ApplySessionOrDefault();
+        // 窗底渐变（Air 感）：DynamicResource 无法可靠驱动 GradientStop 换肤，改由代码按主题重建
+        ThemeManager.ThemeChanged += ApplyBackdrop;
+        ApplyBackdrop();
         ApplyLayout(_layout);
         Loaded += (_, _) => _lastFocusedPane?.FocusList();
         PaneGrid.GotKeyboardFocus += (_, _) =>
@@ -156,6 +159,39 @@ public partial class MainWindow : Window
             // 会话保存失败不影响退出
         }
     }
+
+    /// <summary>全局搜索：回车在最近聚焦窗格递归搜索，Esc 清除。</summary>
+    private void GlobalSearch_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Escape)
+        {
+            GlobalSearchBox.Clear();
+            var pane0 = _lastFocusedPane ?? _panes[0];
+            pane0.Vm.SearchSubdirectories = false;
+            pane0.Vm.FilterText = "";
+            e.Handled = true;
+            return;
+        }
+        if (e.Key is not Key.Enter)
+            return;
+
+        var text = GlobalSearchBox.Text.Trim();
+        var pane = _lastFocusedPane ?? _panes[0];
+        if (text.Length == 0)
+        {
+            pane.Vm.SearchSubdirectories = false;
+            pane.Vm.FilterText = "";
+        }
+        else
+        {
+            pane.Vm.SearchSubdirectories = true; // 先开递归（FilterText 为空时不会触发搜索）
+            pane.Vm.FilterText = text;           // 再赋关键字，触发递归搜索
+        }
+        e.Handled = true;
+    }
+
+    private void ApplyBackdrop() =>
+        RootPanel.Background = ThemeManager.BuildBackdropBrush();
 
     private void ApplyLayout(PaneLayout layout)
     {

@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using FileOps.Core;
 
 namespace MultiPaneExplorer.App.Models;
@@ -20,6 +21,9 @@ public static class ThemeManager
 
     public static string CurrentEffective { get; private set; } = Light;
 
+    /// <summary>有效主题变化后触发（含首次 Apply）；用于重建渐变背景等无法经 DynamicResource 更新的视觉。</summary>
+    public static event Action? ThemeChanged;
+
     /// <summary>应用主题设置（System 先解析为实际值）。在 UI 线程调用。</summary>
     public static void Apply(string theme)
     {
@@ -29,6 +33,7 @@ public static class ThemeManager
             Light => Light,
             _ => IsSystemDark() ? Dark : Light,
         };
+        var changed = effective != CurrentEffective;
         CurrentEffective = effective;
 
         var uri = new Uri(
@@ -48,6 +53,17 @@ public static class ThemeManager
         }
 
         HookSystemThemeChanges();
+        if (changed)
+            ThemeChanged?.Invoke();
+    }
+
+    /// <summary>构建当前主题的窗底渐变画刷（左上→右下，蓝-薄荷 Air 感）。</summary>
+    public static LinearGradientBrush BuildBackdropBrush()
+    {
+        var (top, bottom) = CurrentEffective == Dark
+            ? (Color.FromRgb(0x24, 0x26, 0x2B), Color.FromRgb(0x19, 0x1B, 0x20))
+            : (Color.FromRgb(0xF3, 0xF8, 0xF5), Color.FromRgb(0xE7, 0xEF, 0xFB));
+        return new LinearGradientBrush(top, bottom, 45);
     }
 
     /// <summary>当前会话主题字符串（供保存）。</summary>

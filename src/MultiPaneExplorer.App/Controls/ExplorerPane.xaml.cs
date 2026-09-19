@@ -194,9 +194,9 @@ public partial class ExplorerPane : UserControl
     private void UpdateTreeColumnVisibility()
     {
         var visible = Vm.ShowTree;
-        // 树的宿主 Border（浅灰底）与列一起显隐
-        if (DirTree.Parent is Border host)
-            host.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        // 树卡宿主（含投影层与内容层）整体显隐
+        if (TreeCardHost is not null)
+            TreeCardHost.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         if (visible)
         {
             TreeColumn.MinWidth = _treeColumnMinWidth;
@@ -898,6 +898,10 @@ public partial class ExplorerPane : UserControl
         var ownerHwnd = window is null ? IntPtr.Zero : new System.Windows.Interop.WindowInteropHelper(window).Handle;
         FileOps.Core.ShellDialogs.ShowFileProperties(ownerHwnd, Vm.SelectedPaths[0]);
     }
+
+    /// <summary>状态栏视图切换钮：详细信息/大图标。</summary>
+    private void StatusViewDetails_Click(object sender, RoutedEventArgs e) => Vm.ViewMode = "Details";
+    private void StatusViewIcons_Click(object sender, RoutedEventArgs e) => Vm.ViewMode = "LargeIcons";
 
     /// <summary>搜索结果右键"打开所在文件夹"：跳转到文件目录并定位该文件。</summary>
     private void OpenContainingFolder_Click(object sender, RoutedEventArgs e)

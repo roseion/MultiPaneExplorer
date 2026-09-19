@@ -118,9 +118,16 @@
                     <Button Style="{StaticResource CaptionCloseButtonStyle}" Content="&#xE8BB;"
                             ToolTip="关闭" Click="CloseButton_Click"/>
                 </StackPanel>
-                <TextBlock Text="多栏资源管理器" VerticalAlignment="Center" Margin="12,0,14,0"
+                <TextBlock DockPanel.Dock="Left" Text="多栏资源管理器" VerticalAlignment="Center" Margin="12,0,14,0"
                            FontSize="12" FontWeight="SemiBold"
                            Foreground="{DynamicResource W11.TextSecondary}"/>
+                <!-- 全局搜索：居中胶囊（回车在最近聚焦窗格递归搜索，Esc 清除） -->
+                <Grid>
+                    <TextBox x:Name="GlobalSearchBox" Width="380" HorizontalAlignment="Center" VerticalAlignment="Center"
+                             FontSize="12" Padding="10,5" shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                             ToolTip="搜索（回车在当前窗格递归搜索，Esc 清除）"
+                             KeyDown="GlobalSearch_KeyDown"/>
+                </Grid>
             </DockPanel>
         </Border>
         <!-- Win11 贴靠布局弹窗：最大化钮悬停 400ms 出现，左右两分 + 四宫格 -->

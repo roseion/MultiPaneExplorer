@@ -52,6 +52,13 @@
     <SolidColorBrush x:Key="W11.ScrollBarHover" Color="#6A6A6E"/>
     <SolidColorBrush x:Key="W11.ScrollBarDrag" Color="#8A8A8E"/>
     <SolidColorBrush x:Key="W11.TooltipBackground" Color="#3A3A3C"/>
+    <SolidColorBrush x:Key="W11.BackdropTop" Color="#24262B"/>
+    <SolidColorBrush x:Key="W11.BackdropBottom" Color="#191B20"/>
+    <SolidColorBrush x:Key="W11.TabInactive" Color="#26FFFFFF"/>
+    <SolidColorBrush x:Key="W11.Tint0" Color="#223148"/>
+    <SolidColorBrush x:Key="W11.Tint1" Color="#1F362C"/>
+    <SolidColorBrush x:Key="W11.Tint2" Color="#3A2530"/>
+    <SolidColorBrush x:Key="W11.Tint3" Color="#3B3020"/>
 
     <!-- 列表/树选中色（全局系统键覆盖） -->
     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#2F4B6E"/>

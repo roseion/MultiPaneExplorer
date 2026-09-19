@@ -57,6 +57,10 @@ public partial class PaneViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "就绪";
 
+    /// <summary>当前目录所在盘的剩余空间（状态栏展示）；不可用时为空。</summary>
+    [ObservableProperty]
+    private string _freeSpaceText = string.Empty;
+
     /// <summary>文件树侧栏是否可见（每窗格独立）。</summary>
     [ObservableProperty]
     private bool _showTree = true;
@@ -109,6 +113,7 @@ public partial class PaneViewModel : ObservableObject
         IsRecycleBinView = value == SpecialLocations.RecycleBin;
         UpCommand.NotifyCanExecuteChanged();
         RestartWatcher(value);
+        UpdateFreeSpace(value);
         if (FilterText.Length > 0)
             FilterText = ""; // 导航后重置过滤/搜索（触发 OnFilterTextChanged 刷新列表）
         CurrentPathChanged?.Invoke(value);
@@ -130,6 +135,33 @@ public partial class PaneViewModel : ObservableObject
             _ = RunSearchAsync();
         else if (!SearchSubdirectories)
             LoadEntries();
+    }
+
+    /// <summary>状态栏"可用空间"：读当前目录所在盘的剩余空间；此电脑/回收站/不可读时留空。</summary>
+    private void UpdateFreeSpace(string? path)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(path) || path == SpecialLocations.RecycleBin)
+            {
+                FreeSpaceText = string.Empty;
+                return;
+            }
+            var root = Path.GetPathRoot(path);
+            if (string.IsNullOrEmpty(root))
+            {
+                FreeSpaceText = string.Empty;
+                return;
+            }
+            var drive = new DriveInfo(root);
+            FreeSpaceText = drive.IsReady
+                ? $"可用空间 {drive.AvailableFreeSpace / 1024.0 / 1024 / 1024:F0} GB"
+                : string.Empty;
+        }
+        catch (Exception)
+        {
+            FreeSpaceText = string.Empty;
+        }
     }
 
     /// <summary>子目录搜索：后台递归枚举，命中结果分批回 UI 线程增量追加。</summary>
