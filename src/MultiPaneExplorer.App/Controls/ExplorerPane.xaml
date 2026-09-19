@@ -309,6 +309,7 @@
                           ContextMenuOpening="DirTree_ContextMenuOpening">
                     <TreeView.ItemContainerStyle>
                         <Style TargetType="TreeViewItem">
+                            <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
                             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                             <EventSetter Event="Expanded" Handler="DirTree_ItemExpanded"/>

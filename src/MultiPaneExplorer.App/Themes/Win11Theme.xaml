@@ -430,10 +430,15 @@
         </Style.Triggers>
     </Style>
 
-    <!-- ============ TreeView（透明底融入内容区） ============ -->
+    <!-- ============ TreeView（透明底融入内容区；文字显式跟随主题，防暗色下系统默认黑字不可见） ============ -->
     <Style TargetType="TreeView">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
+    </Style>
+
+    <Style TargetType="TreeViewItem">
+        <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
     </Style>
 
     <!-- ============ ComboBoxItem（悬停灰胶囊、选中淡蓝） ============ -->
