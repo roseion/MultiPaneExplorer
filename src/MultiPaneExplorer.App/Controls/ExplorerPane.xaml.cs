@@ -260,7 +260,10 @@ public partial class ExplorerPane : UserControl
                 Content = content,
                 Margin = new Thickness(0, 4, 3, 4),
                 // 激活/未激活视觉由 W11.TabButton 的 Tag 触发器切换（颜色走 DynamicResource，主题切换不残留）
-                Style = System.Windows.Application.Current?.TryFindResource("W11.TabButton") as Style,
+                // 注意：W11.TabButton 定义在本 UserControl.Resources 中，必须用实例的
+                // TryFindResource（会查自身资源）；Application 级查找找不到 → 样式为 null
+                // → 标签退化为 WPF 默认按钮外观（浅色主题下恰好看不出，暗色下是白色块）
+                Style = TryFindResource("W11.TabButton") as Style,
                 Tag = i == _activeTabIndex ? "Active" : null,
             };
             tabButton.Click += (_, _) => SwitchTab(index);

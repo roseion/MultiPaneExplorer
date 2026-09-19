@@ -305,6 +305,20 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Ctrl+Alt+T：深浅主题一键切换（写会话记忆）
+        if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Alt) && e.Key is Key.T)
+        {
+            var target = ThemeManager.CurrentEffective == ThemeManager.Dark
+                ? ThemeManager.Light
+                : ThemeManager.Dark;
+            ThemeManager.ApplySelected(target);
+            SaveSessionTheme();
+            if (_lastFocusedPane is { } pane)
+                pane.Vm.ShowTransientStatus($"已切换到{(target == ThemeManager.Dark ? "深色" : "浅色")}主题");
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key is not Key.F6)
             return;
 

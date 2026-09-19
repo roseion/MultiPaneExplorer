@@ -59,7 +59,8 @@
         <ItemsPanelTemplate x:Key="DetailsItemsPanel">
             <VirtualizingStackPanel/>
         </ItemsPanelTemplate>
-        <!-- 标签页卡片：颜色全部走 DynamicResource 触发器（本地值会卡死主题切换）；
+        <!-- 标签页卡片：激活态颜色在"模板 DataTrigger"内切换（模板触发器随主题字典重解析；
+             Style.Triggers 的 DynamicResource 在换字典后不会更新，是切换残留的根源）。
              激活 = 卡片底+发丝边，未激活 = 浅灰胶囊。激活态由代码设 Tag="Active" -->
         <Style x:Key="W11.TabButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource W11.SubtleBackground}"/>
@@ -83,16 +84,14 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.PressedBackground}"/>
                             </Trigger>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="Active">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.CardBackground}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource W11.ControlBorder}"/>
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="Tag" Value="Active">
-                    <Setter Property="Background" Value="{DynamicResource W11.CardBackground}"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource W11.ControlBorder}"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
         <!-- 此电脑页：驱动器宽卡 -->
         <DataTemplate x:Key="DriveCardTemplate">
@@ -316,8 +315,7 @@
                           SelectedItemChanged="DirTree_SelectedItemChanged"
                           ContextMenuOpening="DirTree_ContextMenuOpening">
                     <TreeView.ItemContainerStyle>
-                        <Style TargetType="TreeViewItem">
-                            <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
+                        <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
                             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                             <EventSetter Event="Expanded" Handler="DirTree_ItemExpanded"/>
@@ -325,12 +323,15 @@
                     </TreeView.ItemContainerStyle>
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                            <!-- 驱动器用量信息只在"此电脑"页宽卡呈现；树内保持素净（tooltip 保留容量提示） -->
+                            <!-- 驱动器用量信息只在"此电脑"页宽卡呈现；树内保持素净（tooltip 保留容量提示）。
+                                 文字颜色放在元素级（随主题字典重解析）；ItemContainerStyle 上的 Style 级
+                                 DynamicResource 换字典后不更新（暗色黑字的根源），故不放在那里 -->
                             <StackPanel Orientation="Horizontal" Margin="0,2"
                                         ToolTip="{Binding UsageTooltip}">
                                 <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,0,6,1"
                                        VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource W11.TextPrimary}"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
                         </HierarchicalDataTemplate>

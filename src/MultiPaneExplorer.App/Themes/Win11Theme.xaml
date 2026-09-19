@@ -437,8 +437,77 @@
         <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
     </Style>
 
+    <!-- 树节点展开箭头 -->
+    <Style x:Key="W11.TreeExpander" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent">
+                        <TextBlock x:Name="Arrow" Text="&#xE76C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="9" Foreground="{DynamicResource W11.TextTertiary}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Arrow" Property="Text" Value="&#xE70D;"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+    TreeViewItem 自定义模板：默认模板的"非激活选中"底色是接近白的硬编码色（暗色下刺眼），
+    这里改为全部走 W11.* token——选中=强调淡蓝、失焦选中=浅灰胶囊（浅）/浅灰（深）。
+    -->
     <Style TargetType="TreeViewItem">
         <Setter Property="Foreground" Value="{DynamicResource W11.TextPrimary}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TreeViewItem">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ToggleButton x:Name="Expander" Style="{StaticResource W11.TreeExpander}"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          ClickMode="Press"/>
+                            <Border x:Name="Bd" Grid.Column="1" Background="Transparent"
+                                    CornerRadius="6" Padding="4,3">
+                                <ContentPresenter x:Name="PART_Header" ContentSource="Header"/>
+                            </Border>
+                        </Grid>
+                        <ItemsPresenter x:Name="ItemsHost" Margin="18,0,0,0"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                        </Trigger>
+                        <Trigger Property="IsExpanded" Value="False">
+                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.SelectionBackground}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="True"/>
+                                <Condition Property="IsSelectionActive" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource W11.HoverBackground}"/>
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ============ ComboBoxItem（悬停灰胶囊、选中淡蓝） ============ -->
