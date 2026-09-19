@@ -484,3 +484,4 @@ $RECYCLE.BIN/
 # ZCode 工作区文件
 .zcode/
 dist/
+ui-*.png
